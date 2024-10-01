@@ -8,7 +8,7 @@ from setuptools.command.build_py import build_py
 from setuptools.command.build_ext import build_ext
 
 if sys.version_info < (3, 9):
-    print("pfapack requires Python 3.9 or above.")
+    print("pfapack-batched requires Python 3.9 or above.")
     sys.exit(1)
 
 with open("README.md") as f:
@@ -58,7 +58,7 @@ class CustomCleanCommand(Command):
         os.system('make clean -C external/fortran')
 
 setup(
-    name="pfapack",
+    name="pfapack-batched",  # Changed from "pfapack" to "pfapack-batched"
     python_requires=">=3.9",
     version="0.0.1",
     cmdclass={
@@ -74,14 +74,14 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3.9",
     ],
-    description="Efficient numerical computation of the Pfaffian for dense and banded skew-symmetric matrices.",
+    description="Efficient numerical computation of the Pfaffian for dense and banded skew-symmetric matrices (batched version).",
     long_description=readme,
     long_description_content_type="text/markdown",
-    url="https://github.com/jjgoings/pfapack",
-    author="Bas Nijholt (package) and M. Wimmer (code)",
-    author_email="basnijholt@gmail.com",
+    url="https://github.com/yourusername/pfapack-batched",  # Update this to your fork's URL
+    author="Your Name",  # Update this
+    author_email="your.email@example.com",  # Update this
     license="MIT",
-    packages=find_packages(),
+    packages=find_packages(exclude=('tests',)),  # This ensures the package is still imported as 'pfapack'
     package_data={
         'pfapack': ['libcpfapack.so'],
     },
