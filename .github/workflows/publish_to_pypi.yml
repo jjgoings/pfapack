@@ -32,6 +32,11 @@ jobs:
         pip install wheel setuptools twine
         pip install -r requirements.txt
 
+    - name: Update version
+      shell: bash -l {0}
+      run: |
+        sed -i '' "s/version=.*/version='0.0.2.dev${{ github.run_number }}.macos',/" setup.py
+
     - name: Build package
       shell: bash -l {0}
       run: |
@@ -70,6 +75,10 @@ jobs:
         python -m pip install --upgrade pip
         pip install wheel setuptools twine numpy scipy pytest
         pip install -r requirements.txt
+
+    - name: Update version
+      run: |
+        sed -i "s/version=.*/version='0.0.2.dev${{ github.run_number }}.linux',/" setup.py
 
     - name: Build Fortran library
       run: |
