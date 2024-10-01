@@ -1,6 +1,7 @@
-name: Publish to PyPI
+name: Build and Publish to PyPI
 
 on:
+  push:
   release:
     types: [published]
   workflow_dispatch:
@@ -21,34 +22,44 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install cibuildwheel
-        run: python -m pip install cibuildwheel==2.16.2
-
-      - name: Build wheels
-        env:
-          CIBW_BUILD: cp3${{ matrix.python-version=='3.9' && '9' || matrix.python-version=='3.10' && '10' || matrix.python-version=='3.11' && '11' || '12' }}*
-          CIBW_ARCHS_MACOS: ${{ matrix.arch || 'x86_64 arm64' }}
-          CIBW_ARCHS_LINUX: x86_64
-          CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
-          CIBW_BEFORE_BUILD: pip install numpy scipy cython
-          CIBW_BEFORE_ALL_LINUX: yum install -y gcc-gfortran
-          CIBW_ENVIRONMENT: CFLAGS="-march=native" CXXFLAGS="-march=native"
-          CIBW_ENVIRONMENT_MACOS: MACOSX_DEPLOYMENT_TARGET=10.9
-          CIBW_TEST_REQUIRES: pytest
-          CIBW_TEST_COMMAND: pytest {project}/tests
+      - name: Install dependencies
         run: |
-          python -m cibuildwheel --print-build-identifiers
-          python -m cibuildwheel --output-dir wheelhouse
+          python -m pip install --upgrade pip
+          pip install setuptools wheel numpy scipy cython
+
+      - name: Install GCC and GFortran (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc gfortran
+
+      - name: Install GCC and GFortran (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install gcc
+
+      - name: Build wheel
+        env:
+          CFLAGS: "-march=native"
+          CXXFLAGS: "-march=native"
+        run: |
+          python setup.py bdist_wheel
+
+      - name: Run tests
+        run: |
+          pip install pytest
+          pip install dist/*.whl
+          pytest tests
 
       - uses: actions/upload-artifact@v3
         with:
-          name: wheels-${{ matrix.os }}-${{ matrix.arch || 'multi' }}
-          path: ./wheelhouse/*.whl
+          name: wheels-${{ matrix.os }}-${{ matrix.python-version }}
+          path: dist/*.whl
 
   build_sdist:
     name: Build source distribution
@@ -61,8 +72,6 @@ jobs:
           python-version: '3.9'
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y gfortran
           python -m pip install --upgrade pip
           pip install setuptools wheel numpy scipy cython
       - name: Build sdist
@@ -86,22 +95,3 @@ jobs:
         with:
           user: __token__
           password: ${{ secrets.PYPI_TOKEN }}
-
-  test_installation:
-    needs: upload_pypi
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-        python-version: ['3.9', '3.10', '3.11', '3.12']
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install and test package
-        run: |
-          pip install pfapack-batched
-          python -c "import pfapack; print(pfapack.__file__)"
-          pytest tests
