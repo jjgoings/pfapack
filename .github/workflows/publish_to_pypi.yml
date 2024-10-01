@@ -1,135 +1,97 @@
-name: Publish to PyPI
+name: Publish to PyPI and Conda
 
 on:
   release:
-    types: [published]
+    types:
+      - released
   workflow_dispatch:
 
 jobs:
-  build-macos:
+  build-and-publish-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.9', '3.10', '3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Conda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-update-conda: true
+          python-version: ${{ matrix.python-version }}
+          channels: conda-forge,defaults
+      - name: Install dependencies
+        shell: bash -l {0}
+        run: |
+          conda install -y numpy scipy pytest pytest-timeout flake
+          conda install -y -c conda-forge compilers
+          pip install wheel
+          pip install -r requirements.txt
+      - name: Build wheels
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/src/pfapack \
+          -e CMAKE_BUILD_PARALLEL_LEVEL=4 \
+          quay.io/pypa/manylinux2014_x86_64:latest \
+          bash -c "cd /src/pfapack && \
+          /opt/python/cp${matrix.python-version/./}-cp${matrix.python-version/./}/bin/pip wheel -v --no-deps -w /tmp/wheels . && \
+          auditwheel repair --plat manylinux2014_x86_64 /tmp/wheels/*.whl -w ./wheels"
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          packages-dir: ./wheels
+          verbose: true
+
+  build-and-publish-macos:
     runs-on: macos-latest
     strategy:
       fail-fast: false
       matrix:
         python-version: ['3.9', '3.10', '3.11', '3.12']
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Conda
-      uses: conda-incubator/setup-miniconda@v3
-      with:
-        miniconda-version: "latest"
-        auto-update-conda: true
-        python-version: ${{ matrix.python-version }}
-        channels: conda-forge,defaults
-        activate-environment: pfapack-env
-        architecture: arm64
+      - uses: actions/checkout@v4
+      - name: Set up Conda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-update-conda: true
+          python-version: ${{ matrix.python-version }}
+          channels: conda-forge,defaults
+          architecture: arm64
+      - name: Install dependencies
+        shell: bash -l {0}
+        run: |
+          conda install -y numpy scipy pytest pytest-timeout flake8
+          conda install -y -c conda-forge compilers
+          pip install wheel delocate
+          pip install -r requirements.txt
+      - name: Build wheels
+        run: |
+          CFLAGS="-march=armv8-a" pip wheel . -w ./dist
+          delocate-wheel -v ./dist/*.whl
+      - name: Publish to PyPI
+        run: |
+          pip install twine
+          twine upload --verbose dist/*.whl
 
-    - name: Install dependencies
-      shell: bash -l {0}
-      run: |
-        conda install -y numpy scipy pytest
-        conda install -y -c conda-forge compilers
-        pip install wheel setuptools twine
-        pip install -r requirements.txt
-
-    - name: Build package
-      shell: bash -l {0}
-      run: |
-        python setup.py sdist bdist_wheel
-
-    - name: Run tests
-      shell: bash -l {0}
-      run: pytest -v tests
-
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: dist-macos-${{ matrix.python-version }}
-        path: dist/
-
-  build-linux:
+  build-and-publish-sdist:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ['3.9', '3.10', '3.11', '3.12']
+    needs: [build-and-publish-linux, build-and-publish-macos]
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y gcc gfortran
-
-    - name: Install Python dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install wheel setuptools twine numpy scipy pytest
-        pip install -r requirements.txt
-
-    - name: Build Fortran library
-      run: |
-        cd external/fortran
-        make
-        cd ../..
-
-    - name: Build C interface
-      run: |
-        cd external/c_interface
-        make
-        cd ../..
-
-    - name: Build package
-      run: |
-        python setup.py build_ext --inplace
-        python setup.py sdist bdist_wheel
-
-    - name: Run tests
-      run: pytest -v tests
-
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: dist-linux-${{ matrix.python-version }}
-        path: dist/
-
-  publish:
-    needs: [build-macos, build-linux]
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.9'
-    
-    - name: Download all artifacts
-      uses: actions/download-artifact@v3
-      with:
-        path: dist
-
-    - name: Prepare distribution files
-      run: |
-        mkdir combined_dist
-        find dist -name '*.whl' -exec cp {} combined_dist/ \;
-        cp dist/dist-linux-3.9/*.tar.gz combined_dist/
-
-    - name: Publish to PyPI
-      env:
-        TWINE_USERNAME: __token__
-        TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
-      run: |
-        pip install twine
-        twine upload combined_dist/*
-
-    - name: Debug information
-      if: failure()
-      run: |
-        pip list
-        env
-        ls -R dist
-        ls -R combined_dist
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Build sdist
+        run: |
+          pip install build
+          python -m build -s
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          packages-dir: dist
+          verbose: true
