@@ -60,7 +60,7 @@ class CustomCleanCommand(Command):
 setup(
     name="pfapack-batched",  # Changed from "pfapack" to "pfapack-batched"
     python_requires=">=3.9",
-    version="0.0.2",
+    version="0.0.3",
     cmdclass={
         'build_ext': CustomBuildExtCommand,
         'build_py': CustomBuildPyCommand,
