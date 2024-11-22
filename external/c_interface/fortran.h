@@ -16,6 +16,21 @@
 
 #endif
 
+// Move LAPACK declarations to the top, before any complex type definitions
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+// LAPACK function declarations
+void zgetrf_(int* m, int* n, void* a, int* lda,
+             int* ipiv, int* info);
+void zgetri_(int* n, void* a, int* lda, int* ipiv,
+             void* work, int* lwork, int* info);
+
+#ifdef __cplusplus
+}
+#endif
+
 #ifdef CPLUSPLUS_COMPLEX
 
 #include <complex>

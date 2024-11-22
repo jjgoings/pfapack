@@ -20,6 +20,10 @@ using std::exit;
 
 #include "fortran_pfapack.h"
 
+#ifndef MAX
+#define MAX(a,b) ((a) > (b) ? (a) : (b))
+#endif
+
 #ifdef CPLUSPLUS_COMPLEX
 
 static const floatcmplx floatcmplx_one = std::complex<float>(1.0);
