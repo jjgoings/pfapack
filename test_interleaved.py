@@ -39,11 +39,14 @@ for run in range(num_test_runs):
     batch_time = time.time() - start_time
     batch_times.append(batch_time)
     
-    # Time numpy implementation
+    # Time numpy implementation (moved all reshaping)
+    flat_shape = (-1, N, N)
+    A_flat = A.reshape(flat_shape)
     start_time = time.time()
-    numpy_inverses = np.linalg.inv(A.reshape(-1, N, N)).reshape(A.shape)
+    numpy_inverses = np.linalg.inv(A_flat)
     numpy_time = time.time() - start_time
     numpy_times.append(numpy_time)
+    numpy_inverses = numpy_inverses.reshape(A.shape)
     
     # Validate Pfaffians using different methods (on subset for expensive ones)
     if run == 0:
