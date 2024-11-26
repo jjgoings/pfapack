@@ -421,55 +421,56 @@ int skpfa_batched_4d_z(int outer_batch_size, int inner_batch_size, int N, double
     return 0;
 }
 
-int skpfa_batched_4d_z_with_inverse(int outer_batch_size, int inner_batch_size, int N,
-                                    double complex *A_batch, double complex *PFAFF_batch,
-                                    const char *UPLO, const char *MTHD)
+int skpfa_batched_4d_z_with_inverse(
+    int outer_batch_size, int inner_batch_size, int N,
+    double *A_batch_real_imag,     // Shape: (outer_batch, inner_batch, 2, N, N)
+    double *PFAFF_batch_real_imag, // Shape: (outer_batch, inner_batch, 2)
+    double *INV_batch_real_imag,   // Shape: (outer_batch, inner_batch, 2, N, N)
+    const char *UPLO, const char *MTHD)
 {
     char uplo = toupper(UPLO[0]);
     char mthd = toupper(MTHD[0]);
 
     if (N < 0) return -1;
-    if (A_batch == NULL) return -2;
-    if (PFAFF_batch == NULL) return -3;
-    if (uplo != 'U' && uplo != 'L') return -4;
-    if (mthd != 'P' && mthd != 'H') return -5;
+    if (A_batch_real_imag == NULL) return -2;
+    if (PFAFF_batch_real_imag == NULL) return -3;
+    if (INV_batch_real_imag == NULL) return -4;
+    if (uplo != 'U' && uplo != 'L') return -5;
+    if (mthd != 'P' && mthd != 'H') return -6;
 
     if (N > 0) {
         int ldim = N;
         int info = 0;
-        double *rwork = NULL;
         int *iwork = NULL, *ipiv = NULL;
+        double *rwork = NULL;
         double complex *work = NULL;
-        double complex *matrix_copy = NULL;  // Temporary buffer for Pfaffian computation
+        double complex *matrix_copy = NULL;
 
         // Allocate memory
-        iwork = malloc(sizeof(int) * N);
-        ipiv = malloc(sizeof(int) * N);
+        iwork = (int *)malloc(sizeof(int) * N);
+        ipiv = (int *)malloc(sizeof(int) * N);
         if (!iwork || !ipiv) return -100;
 
-        rwork = malloc(sizeof(double) * (N - 1));
+        rwork = (double *)malloc(sizeof(double) * (N - 1));
         if (!rwork) {
             free(ipiv);
             free(iwork);
             return -100;
         }
 
-        // Query optimal workspace size
+        // Query optimal workspace sizes
         int lwork = -1;
         double complex work_query;
-
-        // Query for Pfaffian
+        
         PFAPACK_zskpfa(&uplo, &mthd, &N, NULL, &ldim, &work_query,
                        iwork, &work_query, &lwork, rwork, &info);
         int lwork_pf = (int)creal(work_query);
-
-        // Query for inverse
+        
         zgetri_(&N, NULL, &ldim, NULL, &work_query, &lwork, &info);
         int lwork_inv = (int)creal(work_query);
-
-        // Use the larger workspace
+        
         lwork = (lwork_pf > lwork_inv) ? lwork_pf : lwork_inv;
-        work = malloc(sizeof(double complex) * lwork);
+        work = (double complex *)malloc(sizeof(double complex) * lwork);
         if (!work) {
             free(rwork);
             free(ipiv);
@@ -477,8 +478,7 @@ int skpfa_batched_4d_z_with_inverse(int outer_batch_size, int inner_batch_size, 
             return -100;
         }
 
-        // Allocate temporary buffer for matrix copy
-        matrix_copy = malloc(sizeof(double complex) * N * N);
+        matrix_copy = (double complex *)malloc(sizeof(double complex) * N * N);
         if (!matrix_copy) {
             free(work);
             free(rwork);
@@ -487,66 +487,105 @@ int skpfa_batched_4d_z_with_inverse(int outer_batch_size, int inner_batch_size, 
             return -103;
         }
 
-        // Process each matrix in the 4D batch
+        // Process each matrix in the batch
         for (int i = 0; i < outer_batch_size; i++) {
             for (int j = 0; j < inner_batch_size; j++) {
-                double complex *current_matrix = A_batch + ((i * inner_batch_size + j) * N * N);
-                double complex *current_pfaffian = PFAFF_batch + (i * inner_batch_size + j);
+                double *current_matrix_real = A_batch_real_imag + (i * inner_batch_size + j) * 2 * N * N;
+                double *current_matrix_imag = current_matrix_real + N * N;
+                double *current_pfaffian_real = PFAFF_batch_real_imag + (i * inner_batch_size + j) * 2;
+                double *current_pfaffian_imag = current_pfaffian_real + 1;
+                double *current_inverse_real = INV_batch_real_imag + (i * inner_batch_size + j) * 2 * N * N;
+                double *current_inverse_imag = current_inverse_real + N * N;
 
-                // Copy current_matrix into matrix_copy for Pfaffian computation
-                memcpy(matrix_copy, current_matrix, sizeof(double complex) * N * N);
-
-                // Calculate Pfaffian using matrix_copy
-                PFAPACK_zskpfa(&uplo, &mthd, &N, matrix_copy, &ldim, current_pfaffian,
-                               iwork, work, &lwork, rwork, &info);
-
-                if (info == 0) {
-                    // Compute matrix inverse using LU decomposition on current_matrix
-                    zgetrf_(&N, &N, current_matrix, &ldim, ipiv, &info);
-                    if (info == 0) {
-                        zgetri_(&N, current_matrix, &ldim, ipiv, work, &lwork, &info);
-                        if (info != 0) {
-                            free(matrix_copy);
-                            free(work);
-                            free(rwork);
-                            free(ipiv);
-                            free(iwork);
-                            return -200 - info; // Adjust error code as needed
-                        }
-                    } else {
-                        free(matrix_copy);
-                        free(work);
-                        free(rwork);
-                        free(ipiv);
-                        free(iwork);
-                        return -300 - info; // Adjust error code as needed
+                // Copy the upper triangular part and negate it
+                for (int row = 0; row < N; row++) {
+                    for (int col = row + 1; col < N; col++) {
+                        double complex value = current_matrix_real[row * N + col] + I * current_matrix_imag[row * N + col];
+                        matrix_copy[row * N + col] = -value;
+                        matrix_copy[col * N + row] = value;
                     }
-                } else {
+                    matrix_copy[row * N + row] = 0.0;  // Diagonal elements should be zero
+                }
+
+                // Calculate Pfaffian
+                double complex current_pfaffian;
+                PFAPACK_zskpfa(&uplo, &mthd, &N, matrix_copy, &ldim, &current_pfaffian,
+                              iwork, work, &lwork, rwork, &info);
+
+                *current_pfaffian_real = creal(current_pfaffian);
+                *current_pfaffian_imag = cimag(current_pfaffian);
+
+                if (info != 0) {
                     free(matrix_copy);
                     free(work);
                     free(rwork);
                     free(ipiv);
                     free(iwork);
-                    return -400 - info; // Adjust error code as needed
+                    return -400 - info;
+                }
+
+                // Copy original matrix for inversion
+                for (int row = 0; row < N; row++) {
+                    for (int col = 0; col < N; col++) {
+                        matrix_copy[row * N + col] = 
+                            current_matrix_real[row * N + col] + I * current_matrix_imag[row * N + col];
+                    }
+                }
+
+                // Compute inverse
+                zgetrf_(&N, &N, matrix_copy, &ldim, ipiv, &info);
+                if (info != 0) {
+                    free(matrix_copy);
+                    free(work);
+                    free(rwork);
+                    free(ipiv);
+                    free(iwork);
+                    return -300 - info;
+                }
+
+                zgetri_(&N, matrix_copy, &ldim, ipiv, work, &lwork, &info);
+                if (info != 0) {
+                    free(matrix_copy);
+                    free(work);
+                    free(rwork);
+                    free(ipiv);
+                    free(iwork);
+                    return -200 - info;
+                }
+
+                // Store inverse in split real/imag format
+                for (int row = 0; row < N; row++) {
+                    for (int col = 0; col < N; col++) {
+                        current_inverse_real[row * N + col] = creal(matrix_copy[row * N + col]);
+                        current_inverse_imag[row * N + col] = cimag(matrix_copy[row * N + col]);
+                    }
                 }
             }
         }
 
-        // Free allocated memory
+        // Cleanup
         free(matrix_copy);
         free(work);
         free(rwork);
         free(ipiv);
         free(iwork);
-    } else {
-        // If N <= 0, set Pfaffians to 1
+    }
+    else {
+        // Handle N <= 0 case
         for (int i = 0; i < outer_batch_size * inner_batch_size; i++) {
-            PFAFF_batch[i] = 1.0 + 0.0 * I;
+            PFAFF_batch_real_imag[2 * i] = 1.0;
+            PFAFF_batch_real_imag[2 * i + 1] = 0.0;
+            if (N == 0) {
+                for (int k = 0; k < 2 * N * N; k++) {
+                    INV_batch_real_imag[i * 2 * N * N + k] = 0.0;
+                }
+            }
         }
     }
 
     return 0;
 }
+
 
 #ifdef __cplusplus
 }

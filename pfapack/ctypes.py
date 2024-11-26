@@ -87,10 +87,11 @@ def _init_batched_4d_z_with_inverse(which):
         ctypes.c_int,  # outer_batch_size
         ctypes.c_int,  # inner_batch_size
         ctypes.c_int,  # N
-        ndpointer(dtype=np.complex128, flags="C_CONTIGUOUS"),  # A_batch
-        ndpointer(dtype=np.complex128, flags="C_CONTIGUOUS"),  # PFAFF_batch
-        ctypes.c_char_p,  # UPLO
-        ctypes.c_char_p   # MTHD
+        ndpointer(ctypes.c_double, flags="C_CONTIGUOUS"),  # matrices: (S,G,2,N,N)
+        ndpointer(ctypes.c_double, flags="C_CONTIGUOUS"),  # pfaffians_real_imag: (S,G,2)
+        ndpointer(ctypes.c_double, flags="C_CONTIGUOUS"),  # inverses: (S,G,2,N,N)
+        ctypes.c_char_p,
+        ctypes.c_char_p,
     ]
     return func
 
@@ -285,10 +286,12 @@ def pfaffian_batched_4d_cx(matrices, uplo="U", method="P"):
 
 def pfaffian_batched_4d_cx_with_inverse(matrices, *, uplo="U", method="P", inplace=False):
     """
-    Compute Pfaffians and inverses for a batch of complex matrices.
+    Compute Pfaffians and inverses for a batch of complex matrices using optimized memory layout.
 
     Args:
-        matrices: Array of shape (outer_batch, inner_batch, N, N), dtype=np.complex128
+        matrices: Array of shape (outer_batch, inner_batch, 2, N, N), dtype=np.float64
+                 where matrices[:,:,0,:,:] contains real parts and
+                 matrices[:,:,1,:,:] contains imaginary parts
         uplo: Whether to use upper ('U') or lower ('L') triangular part
         method: Method to use ('P' for Parlett-Reid or 'H' for Householder)
         inplace: If True, compute inverses by overwriting the input matrices.
@@ -297,37 +300,45 @@ def pfaffian_batched_4d_cx_with_inverse(matrices, *, uplo="U", method="P", inpla
     Returns:
         tuple: (pfaffians, inverses) where:
                - pfaffians: shape (outer_batch, inner_batch) containing complex Pfaffians
-               - inverses: shape (outer_batch, inner_batch, N, N) containing matrix inverses
-                          If inplace=True, this is the same array as input matrices.
+               - inverses: shape (outer_batch, inner_batch, 2, N, N) containing matrix inverses
+                          in the same format as input (real/imag split)
     """
-    outer_batch_size, inner_batch_size, N, M = matrices.shape
+    uplo = uplo.encode()
+    method = method.encode()
+
+    if matrices.ndim != 5:
+        raise ValueError("Input must be 5D for batched operation.")
+
+    outer_batch_size, inner_batch_size, ncx, N, M = matrices.shape
+    if ncx != 2:
+        raise ValueError("Unexpected layout of the input matrix.")
     if M != N:
         raise ValueError("Last two dimensions of each matrix must be square.")
 
-    # Always allocate new array for Pfaffians (relatively small)
+    # Prepare output arrays
     pfaffians = np.empty((outer_batch_size, inner_batch_size), dtype=np.complex128)
+    pfaffians_c = np.empty((outer_batch_size, inner_batch_size, 2), dtype=np.float64)
 
-    # Handle matrices - either work inplace or make a copy
     if inplace:
-        work_matrices = matrices
+        inverses = matrices
     else:
-        work_matrices = np.array(matrices, copy=True, order='C')
-
-    # Ensure C-contiguous arrays
-    if not work_matrices.flags['C_CONTIGUOUS']:
-        work_matrices = np.ascontiguousarray(work_matrices)
+        inverses = np.empty_like(matrices)
 
     success = functions["skpfa_batched_4d_z_with_inverse"](
         outer_batch_size,
         inner_batch_size,
         N,
-        work_matrices,
-        pfaffians,
-        uplo.encode(),
-        method.encode()
+        matrices,
+        pfaffians_c,
+        inverses,
+        uplo,
+        method
     )
 
     if success != 0:
         raise RuntimeError(f"PFAPACK returned error code {success}")
 
-    return pfaffians, work_matrices
+    # Convert real/imag components to complex
+    pfaffians = pfaffians_c[:, :, 0] + 1j * pfaffians_c[:, :, 1]
+
+    return pfaffians, inverses
