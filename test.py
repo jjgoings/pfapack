@@ -3,7 +3,6 @@ import numpy as np
 from pfapack.ctypes import pfaffian as cpfaffian
 from pfapack.ctypes import pfaffian_batched as cpfaffian_batched
 from pfapack.ctypes import pfaffian_batched_4d as cpfaffian_batched_4d
-from pfapack.ctypes import pfaffian_batched_4d_cx as cpfaffian_batched_4d_cx
 from pfapack.ctypes import pfaffian_batched_4d_cx_with_inverse as cpfaffian_batched_4d_cx_with_inverse
 
 def create_test_matrices(num_replicas, num_walkers, N, seed=None):
@@ -35,8 +34,8 @@ def main():
     # Test parameters
     num_replicas = 13513
     num_walkers = 8 
-    N = 12 
-    num_test_runs = 3
+    N = 16 
+    num_test_runs = 5
 
     print(f"Test Configuration:")
     print(f"Matrix dimensions: ({num_replicas}, {num_walkers}, {N}, {N})")
@@ -46,7 +45,6 @@ def main():
         'pfaffian': cpfaffian,
         'batched': cpfaffian_batched,
         'batched_4d': cpfaffian_batched_4d,
-        'batched_4d_cx (blocked)': cpfaffian_batched_4d_cx,
         'batched_4d_cx_with_inverse': cpfaffian_batched_4d_cx_with_inverse
     }
 
@@ -79,11 +77,6 @@ def main():
                 times, vals = time_function(
                     lambda: func(A)
                 )
-            elif name == 'batched_4d_cx (blocked)':
-                # Block format
-                times, vals = time_function(
-                    lambda: func(A_block)
-                )
             elif name == 'batched_4d_cx_with_inverse':
                 # With inverse computation - now taking blocked format directly
                 A_block_copy = A_block.copy()  # Create copy to avoid modifying original
@@ -105,7 +98,7 @@ def main():
                 if name != 'pfaffian':
                     if name == 'batched':
                         error = abs(vals[0] - ref_val)
-                    elif name == 'batched_4d' or name == 'batched_4d_cx (blocked)' or name == 'batched_4d_cx_with_inverse':
+                    elif name == 'batched_4d' or name == 'batched_4d_cx_with_inverse':
                         error = abs(vals[0,0] - ref_val)
                     else:
                         continue

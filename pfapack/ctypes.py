@@ -53,13 +53,13 @@ def _init_batched_4d(which):
     func = getattr(lib, which)
     func.restype = ctypes.c_int
     func.argtypes = [
-        ctypes.c_int,  # outer_batch_size
-        ctypes.c_int,  # inner_batch_size
-        ctypes.c_int,  # N
-        ndpointer(ctypes.c_double, flags="F_CONTIGUOUS"),  # A_batch
-        ndpointer(ctypes.c_double, flags="C_CONTIGUOUS"),  # PFAFF_batch
-        ctypes.c_char_p,
-        ctypes.c_char_p,
+        ctypes.c_int,                          # outer_batch_size
+        ctypes.c_int,                          # inner_batch_size
+        ctypes.c_int,                          # N
+        ndpointer(np.float64),                 # A_batch 
+        ndpointer(np.float64),                 # PFAFF_batch
+        ctypes.c_char_p,                       # UPLO
+        ctypes.c_char_p,                       # MTHD
     ]
     return func
 
@@ -67,13 +67,13 @@ def _init_batched_4d_z(which):
     func = getattr(lib, which)
     func.restype = ctypes.c_int
     func.argtypes = [
-        ctypes.c_int,  # outer_batch_size
-        ctypes.c_int,  # inner_batch_size
-        ctypes.c_int,  # N
-        ndpointer(ctypes.c_double, flags="C_CONTIGUOUS"),  # A_batch_real_imag - CHANGED THIS
-        ndpointer(ctypes.c_double, flags="C_CONTIGUOUS"),  # PFAFF_batch_real_imag
-        ctypes.c_char_p,
-        ctypes.c_char_p,
+        ctypes.c_int,                          # outer_batch_size
+        ctypes.c_int,                          # inner_batch_size 
+        ctypes.c_int,                          # N
+        ndpointer(np.complex128),              # A_batch
+        ndpointer(np.complex128),              # PFAFF_batch
+        ctypes.c_char_p,                       # UPLO
+        ctypes.c_char_p,                       # MTHD
     ]
     return func
 
@@ -229,82 +229,66 @@ def pfaffian_batched(matrices, uplo="U", method="P"):
     return PFAFF_batch
 
 def pfaffian_batched_4d(matrices, uplo="U", method="P"):
-    uplo = uplo.encode()
-    method = method.encode()
+    """
+    Compute Pfaffians for a 4D batch of skew-symmetric matrices.
+    
+    Parameters
+    ----------
+    matrices : numpy.ndarray
+        4D array of shape (outer_batch, inner_batch, N, N) containing skew-symmetric matrices
+    uplo : str, optional
+        'U' for upper triangle, 'L' for lower triangle
+    method : str, optional
+        'P' for Parlett-Reid, 'H' for Householder
+        
+    Returns
+    -------
+    numpy.ndarray
+        2D array of shape (outer_batch, inner_batch) containing Pfaffians
+    """
     if matrices.ndim != 4:
-        raise ValueError("Input must be 4D for batched operation.")
-
-    outer_batch_size, inner_batch_size, N, _ = matrices.shape
-    if matrices.shape[-1] != N:
-        raise ValueError("Last two dimensions of each matrix must be square.")
-
-    is_complex = np.iscomplexobj(matrices)
-    dtype = np.float64 if not is_complex else np.complex128
-    result = np.empty((outer_batch_size, inner_batch_size), dtype=dtype)
-
-    if is_complex:
-        # Ensure Fortran contiguous memory layout for complex data
-        matrices = np.asfortranarray(matrices, dtype=np.complex128)
-        matrices_c = np.empty((outer_batch_size, inner_batch_size, 2, N, N), dtype=np.float64, order="F")
-        matrices_c[:, :, 0, :, :] = np.real(matrices)
-        matrices_c[:, :, 1, :, :] = np.imag(matrices)
-        result_c = np.empty((outer_batch_size, inner_batch_size, 2), dtype=np.float64)
-
-        success = functions["skpfa_batched_4d_z"](
-            outer_batch_size,
-            inner_batch_size,
-            N,
-            matrices_c.ravel(),
-            result_c.ravel(),
-            uplo,
-            method
-        )
-        result = result_c[:, :, 0] + 1j * result_c[:, :, 1]
+        raise ValueError("Input must be a 4D array")
+    
+    outer_batch_size, inner_batch_size, N, M = matrices.shape
+    if M != N:
+        raise ValueError("Last two dimensions must be square (N x N)")
+        
+    # Determine type and prepare arrays
+    if np.iscomplexobj(matrices):
+        # Convert only if needed
+        if not matrices.dtype == np.complex128:
+            matrices = np.asarray(matrices, dtype=np.complex128)
+        result = np.empty((outer_batch_size, inner_batch_size), dtype=np.complex128)
+        func = functions["skpfa_batched_4d_z"]
     else:
-        # Ensure Fortran contiguous memory layout for real data
-        matrices = np.asfortranarray(matrices, dtype=np.float64)
-
-        success = functions["skpfa_batched_4d_d"](
-            outer_batch_size,
-            inner_batch_size,
-            N,
-            matrices.ravel(),
-            result.ravel(),
-            uplo,
-            method
-        )
-
-    if success != 0:
-        raise RuntimeError(f"PFAPACK returned error code {success}")
-
-    return result
-
-def pfaffian_batched_4d_cx(matrices, uplo="U", method="P"):
-    uplo = uplo.encode()
-    method = method.encode()
-    if matrices.ndim != 5:
-        raise ValueError("Input must be 5D for batched operation.")
-    outer_batch_size, inner_batch_size, ncx, N, _ = matrices.shape
-    if ncx != 2:
-        raise ValueError("Unexpected layout of the input matrix.")
-    if matrices.shape[-1] != N:
-        raise ValueError("Last two dimensions of each matrix must be square.")
-
-    result = np.empty((outer_batch_size, inner_batch_size), dtype=np.complex128)
-    result_c = np.empty((outer_batch_size, inner_batch_size, 2), dtype=np.float64)
-
-    success = functions["skpfa_batched_4d_z"](
+        # Convert only if needed
+        if not matrices.dtype == np.float64:
+            matrices = np.asarray(matrices, dtype=np.float64)
+        result = np.empty((outer_batch_size, inner_batch_size), dtype=np.float64)
+        func = functions["skpfa_batched_4d_d"]
+    
+    # Ensure array is C-contiguous
+    if not matrices.flags['C_CONTIGUOUS']:
+        matrices = np.ascontiguousarray(matrices)
+    
+    # Reshape to match C function's expectation
+    matrices_flat = matrices.reshape(-1, N, N)
+    result_flat = result.reshape(-1)
+    
+    # Compute Pfaffians
+    success = func(
         outer_batch_size,
         inner_batch_size,
         N,
-        matrices,
-        result_c,
-        uplo,
-        method
+        matrices_flat,
+        result_flat,
+        uplo.encode(),
+        method.encode()
     )
-    result = result_c[:, :, 0] + 1j * result_c[:, :, 1]
+    
     if success != 0:
-        raise RuntimeError(f"PFAPACK returned error code {success}")
+        raise RuntimeError(f"Pfaffian computation failed with error code {success}")
+    
     return result
 
 def pfaffian_batched_4d_cx_with_inverse(matrices, *, uplo="U", method="P", inplace=False):
