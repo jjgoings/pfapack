@@ -11,7 +11,7 @@ from pfapack import pfaffian as pf  # noqa isort:skip
 from pfapack.ctypes import pfaffian as cpfaffian
 from pfapack.ctypes import pfaffian_batched as cpfaffian_batched
 from pfapack.ctypes import pfaffian_batched_4d as cpfaffian_batched_4d
-from pfapack.ctypes import pfaffian_batched_4d_cx_with_inverse as cpfaffian_batched_4d_cx_with_inverse
+from pfapack.ctypes import pfaffian_batched_4d_z_with_inverse as cpfaffian_batched_4d_z_with_inverse
 
 
 EPS = 1e-11
@@ -226,45 +226,54 @@ def test_known_values_4d():
     np.testing.assert_allclose(pfaffians_batched_complex, expected_complex, rtol=EPS, atol=EPS)
 
 
-def test_pfaffian_batched_4d_cx_with_inverse():
-    # Create a random batch of complex matrices
-    matrices_4d = (np.random.randn(2, 3, 4, 4) +
-                   1j * np.random.randn(2, 3, 4, 4)).astype(np.complex128)
-
-    # Split into real and imaginary parts for 5D representation
-    matrices = np.empty((2, 3, 2, 4, 4), dtype=np.float64)
-    matrices[:, :, 0, :, :] = matrices_4d.real
-    matrices[:, :, 1, :, :] = matrices_4d.imag
-
-    original = matrices.copy()  # Keep a true copy of the original
-    matrices_copy = matrices.copy()  # Another copy for non-inplace test
-
+def test_pfaffian_batched_4d_with_inverse():
+    # Create a random batch of complex skew-symmetric matrices
+    # Shape: (outer_batch, inner_batch, N, N)
+    N = 4
+    outer_batch, inner_batch = 2, 3
+    
+    # Generate random complex matrices
+    matrices = (np.random.randn(outer_batch, inner_batch, N, N) + 
+               1j * np.random.randn(outer_batch, inner_batch, N, N)).astype(np.complex128)
+    
+    # Make them skew-symmetric (A = -A^T)
+    matrices = matrices - np.transpose(matrices, (0, 1, 3, 2))
+    
+    # Keep copies for testing
+    original = matrices.copy()
+    matrices_copy = matrices.copy()
+    
     # Test inplace version
-    pfaff1, inv1 = cpfaffian_batched_4d_cx_with_inverse(matrices, inplace=True)
+    pfaff1, inv1 = cpfaffian_batched_4d_z_with_inverse(matrices, inplace=True)
     assert matrices is inv1  # Check inplace memory sharing
-
+    
     # Test non-inplace version
-    pfaff2, inv2 = cpfaffian_batched_4d_cx_with_inverse(matrices_copy, inplace=False)
-    assert np.allclose(matrices_copy, original)  # Check that the original is unchanged
+    pfaff2, inv2 = cpfaffian_batched_4d_z_with_inverse(matrices_copy, inplace=False)
+    assert np.allclose(matrices_copy, original)  # Check original is unchanged
     assert np.allclose(inv1, inv2)  # Inverse results should match
     assert np.allclose(pfaff1, pfaff2)  # Pfaffian results should match
-
+    
     # Validate correctness of inverses (A * A^-1 = I)
-    batch_size1, batch_size2 = matrices.shape[:2]
-    atol, rtol = 1e-7, 1e-5  # Adjust tolerances as needed
-    for i in range(batch_size1):
-        for j in range(batch_size2):
-            # Reconstruct the original complex matrix
-            original_complex = (
-                original[i, j, 0, :, :] + 1j * original[i, j, 1, :, :]
-            )
-            inverse_complex = (
-                inv1[i, j, 0, :, :] + 1j * inv1[i, j, 1, :, :]
-            )
-            # Verify that A * A^-1 = Identity with tolerances
+    atol, rtol = 1e-7, 1e-5
+    for i in range(outer_batch):
+        for j in range(inner_batch):
+            # Get original matrix and its computed inverse
+            original_matrix = original[i, j]
+            inverse_matrix = inv1[i, j]
+            
+            # Verify that A * A^-1 = Identity
             assert np.allclose(
-                original_complex @ inverse_complex,
-                np.eye(original_complex.shape[0]),
+                original_matrix @ inverse_matrix,
+                np.eye(N),
                 atol=atol,
                 rtol=rtol
             )
+            
+            # Additional checks for mathematical properties
+            # 1. Verify skew-symmetry of original matrix
+            assert np.allclose(original_matrix, -original_matrix.T)
+            
+            # 2. Verify Pfaffian^2 = determinant
+            det = np.linalg.det(original_matrix)
+            pf_squared = pfaff1[i, j] ** 2
+            assert np.allclose(pf_squared, det, atol=atol, rtol=rtol)

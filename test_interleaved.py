@@ -4,10 +4,10 @@ from pfapack import pfaffian as pfa
 from pfapack.ctypes import pfaffian as cpfaffian
 from pfapack.ctypes import pfaffian_batched as cpfaffian_batched
 from pfapack.ctypes import pfaffian_batched_4d as cpfaffian_batched_4d
-from pfapack.ctypes import pfaffian_batched_4d_cx_with_inverse as cpfaffian_batched_4d_cx_with_inverse
+from pfapack.ctypes import pfaffian_batched_4d_z_with_inverse as cpfaffian_batched_4d_z_with_inverse
 
 # Test parameters
-num_replicas = 1000
+num_replicas = 50000
 num_walkers = 17
 N = 16
 M = num_walkers
@@ -35,7 +35,7 @@ for run in range(num_test_runs):
     
     # Time batched implementation with inverse
     start_time = time.time()
-    pfaff_batch, inverses = cpfaffian_batched_4d_cx_with_inverse(A.copy())
+    pfaff_batch, inverses = cpfaffian_batched_4d_z_with_inverse(A.copy())
     batch_time = time.time() - start_time
     batch_times.append(batch_time)
     
