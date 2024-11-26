@@ -16,7 +16,7 @@ except Exception as e:
 
 def _init(which):
     func = getattr(lib, which)
-    func.restype = ctypes.c_int
+    func.restype = ctypes.c_int  # result type
     func.argtypes = [
         ctypes.c_int,
         ndpointer(ctypes.c_double, flags="F_CONTIGUOUS"),
@@ -26,30 +26,27 @@ def _init(which):
     ]
     return func
 
-def _init_batched(which):
+def _init_batched(which, is_complex=False):
     func = getattr(lib, which)
     func.restype = ctypes.c_int
-    func.argtypes = [
-        ctypes.c_int,  # batch_size
-        ctypes.c_int,  # N
-        ndpointer(ctypes.c_double, flags="F_CONTIGUOUS"),  # A_batch
-        ndpointer(ctypes.c_double, flags="C_CONTIGUOUS"),  # PFAFF_batch
-        ctypes.c_char_p,
-        ctypes.c_char_p,
-    ]
-    return func
-
-def _init_batched_z(which):
-    func = getattr(lib, which)
-    func.restype = ctypes.c_int
-    func.argtypes = [
-        ctypes.c_int,  # batch_size
-        ctypes.c_int,  # N
-        ndpointer(ctypes.c_double, flags="F_CONTIGUOUS"),  # A_batch_real_imag
-        ndpointer(ctypes.c_double, flags="C_CONTIGUOUS"),  # PFAFF_batch_real_imag
-        ctypes.c_char_p,
-        ctypes.c_char_p,
-    ]
+    if not is_complex:
+        func.argtypes = [
+            ctypes.c_int,                                  # batch_size
+            ctypes.c_int,                                  # N
+            ndpointer(np.float64),                        # A_batch - removed F_CONTIGUOUS requirement
+            ndpointer(np.float64),                        # PFAFF_batch
+            ctypes.c_char_p,                              # UPLO
+            ctypes.c_char_p,                              # MTHD
+        ]
+    else:
+        func.argtypes = [
+            ctypes.c_int,                                  # batch_size
+            ctypes.c_int,                                  # N
+            ndpointer(np.complex128),                     # A_batch - removed F_CONTIGUOUS requirement
+            ndpointer(np.complex128),                     # PFAFF_batch
+            ctypes.c_char_p,                              # UPLO
+            ctypes.c_char_p,                              # MTHD
+        ]
     return func
 
 def _init_batched_4d(which):
@@ -95,115 +92,126 @@ def _init_batched_4d_z_with_inverse(which):
     ]
     return func
 
+skpfa_d = _init("skpfa_d")  # Pfaffian for real double
+skpf10_d = _init("skpf10_d")
+skpfa_z = _init("skpfa_z")  # Pfaffian for complex double
+skpf10_z = _init("skpf10_z")
+
 functions = {
-    "skpfa_d": _init("skpfa_d"),
-    "skpf10_d": _init("skpf10_d"),
-    "skpfa_z": _init("skpfa_z"),
-    "skpf10_z": _init("skpf10_z"),
-    "skpfa_batched_d": _init_batched("skpfa_batched_d"),
-    "skpfa_batched_z": _init_batched_z("skpfa_batched_z"),
+    "skpfa_batched_d": _init_batched("skpfa_batched_d", is_complex=False),
+    "skpfa_batched_z": _init_batched("skpfa_batched_z", is_complex=True),
     "skpfa_batched_4d_d": _init_batched_4d("skpfa_batched_4d_d"),
     "skpfa_batched_4d_z": _init_batched_4d_z("skpfa_batched_4d_z"),
     "skpfa_batched_4d_z_with_inverse": _init_batched_4d_z_with_inverse("skpfa_batched_4d_z_with_inverse")
 }
 
 def from_exp(x, exp):
+    """Convert pfapack overflow-safe representation (x, exponent) scalar number.
+
+    Overflows are converted to infinities.
+    """
+    assert np.isclose(np.imag(exp), 0.0)
     try:
         return x * 10 ** exp
     except OverflowError:
         return x * np.inf
 
-def pfaffian(matrices, uplo="U", method="P", avoid_overflow=False):
-    uplo = uplo.encode()
-    method = method.encode()
-    if matrices.ndim < 2:
-        raise ValueError("Input must be at least 2D.")
 
-    N = matrices.shape[-1]
-    if matrices.shape[-2] != N:
-        raise ValueError("Last two dimensions must be square.")
+def pfaffian(
+    matrix: np.ndarray,
+    uplo: str = "U",
+    method: str = "P",
+    avoid_overflow: bool = False,
+):
+    """Compute Pfaffian.
 
-    is_complex = np.iscomplexobj(matrices)
-    dtype = np.float64 if not is_complex else np.complex128
-    result = np.empty(matrices.shape[:-2], dtype=dtype)
-    matrices = matrices.reshape(-1, N, N)
-    func_suffix = '_z' if is_complex else '_d'
-
-    for idx, matrix in enumerate(matrices):
-        if is_complex:
-            a = np.asfortranarray(matrix)
-            a_complex = np.zeros((2,) + matrix.shape, dtype=np.float64, order="F")
-            a_complex[0] = np.real(a)
-            a_complex[1] = np.imag(a)
-            a = a_complex
-        else:
-            a = np.asfortranarray(matrix, dtype=np.float64)
-
+    Parameters
+    ----------
+    matrix : numpy.ndarray
+        Square skew-symmetric matrix.
+    uplo : str
+        If 'U' ('L'), the upper (lower) triangle of the matrix is used.
+    method : str
+        If 'P' ('H'), the Parley-Reid (Householder) algorithm is used.
+    avoid_overflow : bool
+        If True, take special care to avoid numerical under- or
+        overflow (at the cost of possible additional round-off errors).
+    """
+    uplo: bytes = uplo.encode()
+    method: bytes = method.encode()
+    assert np.ndim(matrix) == 2 and np.shape(matrix)[0] == np.shape(matrix)[1]
+    if np.iscomplex(matrix).any():
+        a = np.zeros((2,) + np.shape(matrix), dtype=np.float64, order="F")
+        a[0] = np.real(matrix)
+        a[1] = np.imag(matrix)
         if avoid_overflow:
-            pfaffian_values = (ctypes.c_double * (4 if is_complex else 2))()
-            success = functions[f"skpf10{func_suffix}"](N, a, pfaffian_values, uplo, method)
-            if is_complex:
-                x = pfaffian_values[0] + 1j * pfaffian_values[1]
-                exp = pfaffian_values[2] + 1j * pfaffian_values[3]
-                pfaffian = from_exp(x, exp)
-            else:
-                pfaffian = from_exp(pfaffian_values[0], pfaffian_values[1])
+            pfaffian = (ctypes.c_double * 4)(0.0, 0.0)
+            success = skpf10_z(matrix.shape[0], a, pfaffian, uplo, method)
+            x = pfaffian[0] + 1j * pfaffian[1]
+            exp = pfaffian[2] + 1j * pfaffian[3]
+            pfaffian = from_exp(x, exp)
         else:
-            pfaffian_value = (ctypes.c_double * (2 if is_complex else 1))()
-            success = functions[f"skpfa{func_suffix}"](N, a, pfaffian_value, uplo, method)
-            pfaffian = pfaffian_value[0] + (1j * pfaffian_value[1] if is_complex else 0)
-
-        assert success == 0
-        np.ravel(result)[idx] = pfaffian
-
-    return result
+            pfaffian = (ctypes.c_double * 2)(0.0, 0.0)
+            success = skpfa_z(matrix.shape[0], a, pfaffian, uplo, method)
+            pfaffian = pfaffian[0] + 1j * pfaffian[1]
+    else:
+        matrix = np.asarray(matrix, dtype=np.float64, order="F")
+        if avoid_overflow:
+            pfaffian = (ctypes.c_double * 2)(0.0, 0.0)
+            success = skpf10_d(matrix.shape[0], matrix, pfaffian, uplo, method)
+            pfaffian = from_exp(pfaffian[0], pfaffian[1])
+        else:
+            pfaffian = ctypes.c_double(0.0)
+            success = skpfa_d(
+                matrix.shape[0], matrix, ctypes.byref(pfaffian), uplo, method
+            )
+            pfaffian = pfaffian.value
+    assert success == 0
+    return pfaffian
 
 def pfaffian_batched(matrices, uplo="U", method="P"):
-    uplo = uplo.encode()
-    method = method.encode()
+    """
+    Compute the Pfaffian for a batch of skew-symmetric matrices.
+    """
     if matrices.ndim != 3:
-        raise ValueError("Input must be 3D for batched operation.")
-
-    batch_size, N, _ = matrices.shape
-    if matrices.shape[-1] != N:
-        raise ValueError("Last two dimensions of each matrix must be square.")
-
-    is_complex = np.iscomplexobj(matrices)
-    dtype = np.float64 if not is_complex else np.complex128
-    result = np.empty(batch_size, dtype=dtype)
-
-    if is_complex:
-        # Ensure Fortran contiguous memory layout for complex data
-        matrices = np.asfortranarray(matrices, dtype=np.complex128)
-        matrices_c = np.empty((batch_size, 2, N, N), dtype=np.float64, order="F")
-        matrices_c[:, 0, :, :] = np.real(matrices)
-        matrices_c[:, 1, :, :] = np.imag(matrices)
-        result_c = np.empty((batch_size, 2), dtype=np.float64)
-
+        raise ValueError("Input must be a 3D array for batched operation.")
+    
+    batch_size, N, M = matrices.shape
+    if M != N:
+        raise ValueError("Each matrix must be square (N x N).")
+    
+    # Keep matrices C-ordered, but ensure proper alignment
+    matrices = np.ascontiguousarray(matrices)
+    
+    if np.iscomplexobj(matrices):
+        matrices = matrices.astype(np.complex128)
+        PFAFF_batch = np.empty(batch_size, dtype=np.complex128)
+        
         success = functions["skpfa_batched_z"](
             batch_size,
             N,
-            matrices_c.ravel(),
-            result_c.ravel(),
-            uplo,
-            method
+            matrices,
+            PFAFF_batch,
+            uplo.encode(),
+            method.encode()
         )
-        result = result_c[:, 0] + 1j * result_c[:, 1]
     else:
-        # Ensure Fortran contiguous memory layout for real data
-        matrices = np.asfortranarray(matrices, dtype=np.float64)
-
+        matrices = matrices.astype(np.float64)
+        PFAFF_batch = np.empty(batch_size, dtype=np.float64)
+        
         success = functions["skpfa_batched_d"](
             batch_size,
             N,
-            matrices.ravel(),
-            result,
-            uplo,
-            method
+            matrices,
+            PFAFF_batch,
+            uplo.encode(),
+            method.encode()
         )
 
-    assert success == 0
-    return result
+    if success != 0:
+        raise RuntimeError(f"Pfaffian computation failed with error code {success}")
+        
+    return PFAFF_batch
 
 def pfaffian_batched_4d(matrices, uplo="U", method="P"):
     uplo = uplo.encode()
