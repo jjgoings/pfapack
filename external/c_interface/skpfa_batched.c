@@ -2,14 +2,64 @@
 #include "fortran.h"
 #include "fortran_pfapack.h"
 #include "pfapack.h"
-#include <string.h>  // Required for memcpy
+#include <string.h>
 #include <stdio.h>
 #include <complex.h>
-#include <ctype.h>  // Include ctype.h for toupper
+#include <ctype.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+// Helper function for block-wise matrix transposition
+static inline void transpose_block(const double *src, double *dst, int N, 
+                                 int row_start, int col_start, 
+                                 int block_rows, int block_cols) {
+    for (int i = 0; i < block_rows; i++) {
+        for (int j = 0; j < block_cols; j++) {
+            dst[(row_start + i) + (col_start + j) * N] = 
+                src[(row_start + i) * N + (col_start + j)];
+        }
+    }
+}
+
+// Block-wise matrix transposition from C to Fortran order
+static void transpose_matrix(const double *src, double *dst, int N) {
+    const int BLOCK_SIZE = 32;  // Tune based on cache size
+    
+    for (int i = 0; i < N; i += BLOCK_SIZE) {
+        for (int j = 0; j < N; j += BLOCK_SIZE) {
+            const int block_rows = (i + BLOCK_SIZE > N) ? (N - i) : BLOCK_SIZE;
+            const int block_cols = (j + BLOCK_SIZE > N) ? (N - j) : BLOCK_SIZE;
+            transpose_block(src, dst, N, i, j, block_rows, block_cols);
+        }
+    }
+}
+
+// Complex version of block transposition
+static inline void transpose_block_complex(const doublecmplx *src, doublecmplx *dst, int N,
+                                         int row_start, int col_start,
+                                         int block_rows, int block_cols) {
+    for (int i = 0; i < block_rows; i++) {
+        for (int j = 0; j < block_cols; j++) {
+            dst[(row_start + i) + (col_start + j) * N] = 
+                src[(row_start + i) * N + (col_start + j)];
+        }
+    }
+}
+
+// Block-wise complex matrix transposition
+static void transpose_matrix_complex(const doublecmplx *src, doublecmplx *dst, int N) {
+    const int BLOCK_SIZE = 16;  // Smaller for complex numbers due to size
+    
+    for (int i = 0; i < N; i += BLOCK_SIZE) {
+        for (int j = 0; j < N; j += BLOCK_SIZE) {
+            const int block_rows = (i + BLOCK_SIZE > N) ? (N - i) : BLOCK_SIZE;
+            const int block_cols = (j + BLOCK_SIZE > N) ? (N - j) : BLOCK_SIZE;
+            transpose_block_complex(src, dst, N, i, j, block_rows, block_cols);
+        }
+    }
+}
 
 int skpfa_batched_d(int batch_size, int N, double *A_batch, double *PFAFF_batch,
                     const char *UPLO, const char *MTHD)
@@ -25,28 +75,29 @@ int skpfa_batched_d(int batch_size, int N, double *A_batch, double *PFAFF_batch,
     if (mthd != 'P' && mthd != 'H') return -5;
 
     if (N > 0) {
+        // Single workspace allocation for the entire batch
+        double *A_work = (double *)malloc(N * N * sizeof(double));
+        if (!A_work) return -100;
+        
         for (int i = 0; i < batch_size; i++) {
-            // Allocate workspace for matrix in Fortran order
-            double *A_work = (double *)malloc(N * N * sizeof(double));
-            if (!A_work) return -100;
-            
-            // Input matrix pointer (C-ordered)
+            // Get pointer to current matrix in batch
             double *A = A_batch + i * N * N;
             
-            // Convert from C to Fortran order
-            for (int row = 0; row < N; row++) {
-                for (int col = 0; col < N; col++) {
-                    A_work[row + col * N] = A[row * N + col];
-                }
-            }
+            // Convert from C to Fortran order using block transposition
+            transpose_matrix(A, A_work, N);
             
-            // Compute Pfaffian 
+            // Compute Pfaffian
             int ret = skpfa_d(N, A_work, &PFAFF_batch[i], UPLO, MTHD);
             
-            free(A_work);
-            if (ret != 0) return ret;
+            if (ret != 0) {
+                free(A_work);
+                return ret;
+            }
         }
+        
+        free(A_work);
     } else {
+        // Handle empty matrix case
         for (int i = 0; i < batch_size; i++) {
             PFAFF_batch[i] = 1.0;
         }
@@ -55,13 +106,13 @@ int skpfa_batched_d(int batch_size, int N, double *A_batch, double *PFAFF_batch,
     return 0;
 }
 
-// Complex version with same pattern
 int skpfa_batched_z(int batch_size, int N, doublecmplx *A_batch, doublecmplx *PFAFF_batch,
                     const char *UPLO, const char *MTHD)
 {
     char uplo = toupper(UPLO[0]);
     char mthd = toupper(MTHD[0]);
 
+    // Input validation
     if (N < 0) return -1;
     if (A_batch == NULL) return -2;
     if (PFAFF_batch == NULL) return -3;
@@ -69,28 +120,29 @@ int skpfa_batched_z(int batch_size, int N, doublecmplx *A_batch, doublecmplx *PF
     if (mthd != 'P' && mthd != 'H') return -5;
 
     if (N > 0) {
+        // Single workspace allocation for the entire batch
+        doublecmplx *A_work = (doublecmplx *)malloc(N * N * sizeof(doublecmplx));
+        if (!A_work) return -100;
+        
         for (int i = 0; i < batch_size; i++) {
-            // Allocate workspace for matrix in Fortran order
-            doublecmplx *A_work = (doublecmplx *)malloc(N * N * sizeof(doublecmplx));
-            if (!A_work) return -100;
-            
-            // Input matrix pointer (C-ordered)
+            // Get pointer to current matrix in batch
             doublecmplx *A = A_batch + i * N * N;
             
-            // Convert from C to Fortran order
-            for (int row = 0; row < N; row++) {
-                for (int col = 0; col < N; col++) {
-                    A_work[row + col * N] = A[row * N + col];
-                }
-            }
+            // Convert from C to Fortran order using block transposition
+            transpose_matrix_complex(A, A_work, N);
             
             // Compute Pfaffian
             int ret = skpfa_z(N, A_work, &PFAFF_batch[i], UPLO, MTHD);
             
-            free(A_work);
-            if (ret != 0) return ret;
+            if (ret != 0) {
+                free(A_work);
+                return ret;
+            }
         }
+        
+        free(A_work);
     } else {
+        // Handle empty matrix case
         for (int i = 0; i < batch_size; i++) {
             PFAFF_batch[i] = doublecmplx_one;
         }
@@ -98,6 +150,7 @@ int skpfa_batched_z(int batch_size, int N, doublecmplx *A_batch, doublecmplx *PF
 
     return 0;
 }
+
 
 int skpfa_batched_4d_d(int outer_batch_size, int inner_batch_size, int N, double *A_batch, double *PFAFF_batch,
                        const char *UPLO, const char *MTHD)

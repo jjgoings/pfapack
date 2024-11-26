@@ -171,46 +171,61 @@ def pfaffian(
 
 def pfaffian_batched(matrices, uplo="U", method="P"):
     """
-    Compute the Pfaffian for a batch of skew-symmetric matrices.
+    Compute the Pfaffian for a batch of skew-symmetric matrices with optimized memory handling.
+    
+    Parameters
+    ----------
+    matrices : numpy.ndarray
+        3D array of shape (batch_size, N, N) containing skew-symmetric matrices
+    uplo : str, optional
+        'U' for upper triangle, 'L' for lower triangle
+    method : str, optional
+        'P' for Parlett-Reid, 'H' for Householder
+        
+    Returns
+    -------
+    numpy.ndarray
+        1D array of Pfaffians for each matrix in the batch
     """
+    # Input validation
     if matrices.ndim != 3:
-        raise ValueError("Input must be a 3D array for batched operation.")
+        raise ValueError("Input must be a 3D array for batched operation")
     
     batch_size, N, M = matrices.shape
     if M != N:
-        raise ValueError("Each matrix must be square (N x N).")
-    
-    # Keep matrices C-ordered, but ensure proper alignment
-    matrices = np.ascontiguousarray(matrices)
-    
-    if np.iscomplexobj(matrices):
-        matrices = matrices.astype(np.complex128)
-        PFAFF_batch = np.empty(batch_size, dtype=np.complex128)
-        
-        success = functions["skpfa_batched_z"](
-            batch_size,
-            N,
-            matrices,
-            PFAFF_batch,
-            uplo.encode(),
-            method.encode()
-        )
-    else:
-        matrices = matrices.astype(np.float64)
-        PFAFF_batch = np.empty(batch_size, dtype=np.float64)
-        
-        success = functions["skpfa_batched_d"](
-            batch_size,
-            N,
-            matrices,
-            PFAFF_batch,
-            uplo.encode(),
-            method.encode()
-        )
+        raise ValueError("Each matrix must be square (N x N)")
 
+    # Determine type and prepare arrays efficiently
+    if np.iscomplexobj(matrices):
+        # Convert only if needed, avoid unnecessary copy
+        if not matrices.dtype == np.complex128:
+            matrices = np.asarray(matrices, dtype=np.complex128)
+        PFAFF_batch = np.empty(batch_size, dtype=np.complex128)
+        func = functions["skpfa_batched_z"]
+    else:
+        # Convert only if needed, avoid unnecessary copy
+        if not matrices.dtype == np.float64:
+            matrices = np.asarray(matrices, dtype=np.float64)
+        PFAFF_batch = np.empty(batch_size, dtype=np.float64)
+        func = functions["skpfa_batched_d"]
+    
+    # Ensure array is C-contiguous only if necessary
+    if not matrices.flags['C_CONTIGUOUS']:
+        matrices = np.ascontiguousarray(matrices)
+    
+    # Compute Pfaffians
+    success = func(
+        batch_size,
+        N,
+        matrices,
+        PFAFF_batch,
+        uplo.encode(),
+        method.encode()
+    )
+    
     if success != 0:
         raise RuntimeError(f"Pfaffian computation failed with error code {success}")
-        
+    
     return PFAFF_batch
 
 def pfaffian_batched_4d(matrices, uplo="U", method="P"):
