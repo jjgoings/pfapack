@@ -12,6 +12,7 @@ using std::exit;
 
 #else
 
+#define _POSIX_C_SOURCE 200112L
 #include <stdlib.h>
 #include <ctype.h>
 #include <stdio.h>
