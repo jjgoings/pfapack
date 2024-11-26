@@ -7,9 +7,9 @@ from pfapack.ctypes import pfaffian_batched_4d as cpfaffian_batched_4d
 from pfapack.ctypes import pfaffian_batched_4d_cx_with_inverse as cpfaffian_batched_4d_cx_with_inverse
 
 # Test parameters
-num_replicas = 1000
-num_walkers = 17
-N = 16
+num_replicas = 10000
+num_walkers = 15 
+N = 14
 M = num_walkers
 num_test_runs = 1
 

@@ -33,9 +33,9 @@ def time_function(func, *args, n_repeats=5):
 
 def main():
     # Test parameters
-    num_replicas = 1000
-    num_walkers = 17
-    N = 16
+    num_replicas = 20000
+    num_walkers = 17 
+    N = 16 
     num_test_runs = 3
 
     print(f"Test Configuration:")
