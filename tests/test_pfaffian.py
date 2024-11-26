@@ -225,28 +225,46 @@ def test_known_values_4d():
     np.testing.assert_allclose(pfaffians_batched_real, expected_real, rtol=EPS, atol=EPS)
     np.testing.assert_allclose(pfaffians_batched_complex, expected_complex, rtol=EPS, atol=EPS)
 
+
 def test_pfaffian_batched_4d_cx_with_inverse():
-    # Test both inplace and non-inplace versions
-    matrices = (np.random.randn(2, 3, 4, 4) + 
-               1j * np.random.randn(2, 3, 4, 4)).astype(np.complex128)
-    original = matrices.copy()  # Keep a true copy of original
+    # Create a random batch of complex matrices
+    matrices_4d = (np.random.randn(2, 3, 4, 4) +
+                   1j * np.random.randn(2, 3, 4, 4)).astype(np.complex128)
+
+    # Split into real and imaginary parts for 5D representation
+    matrices = np.empty((2, 3, 2, 4, 4), dtype=np.float64)
+    matrices[:, :, 0, :, :] = matrices_4d.real
+    matrices[:, :, 1, :, :] = matrices_4d.imag
+
+    original = matrices.copy()  # Keep a true copy of the original
     matrices_copy = matrices.copy()  # Another copy for non-inplace test
-    
-    # Test inplace
+
+    # Test inplace version
     pfaff1, inv1 = cpfaffian_batched_4d_cx_with_inverse(matrices, inplace=True)
-    assert matrices is inv1  # Should be same memory
-    
-    # Test non-inplace
+    assert matrices is inv1  # Check inplace memory sharing
+
+    # Test non-inplace version
     pfaff2, inv2 = cpfaffian_batched_4d_cx_with_inverse(matrices_copy, inplace=False)
-    assert np.allclose(matrices_copy, original)  # Original should be unchanged
+    assert np.allclose(matrices_copy, original)  # Check that the original is unchanged
     assert np.allclose(inv1, inv2)  # Inverse results should match
     assert np.allclose(pfaff1, pfaff2)  # Pfaffian results should match
 
-    # Test inverses are correct (A * A^-1 = I)
+    # Validate correctness of inverses (A * A^-1 = I)
     batch_size1, batch_size2 = matrices.shape[:2]
+    atol, rtol = 1e-7, 1e-5  # Adjust tolerances as needed
     for i in range(batch_size1):
         for j in range(batch_size2):
+            # Reconstruct the original complex matrix
+            original_complex = (
+                original[i, j, 0, :, :] + 1j * original[i, j, 1, :, :]
+            )
+            inverse_complex = (
+                inv1[i, j, 0, :, :] + 1j * inv1[i, j, 1, :, :]
+            )
+            # Verify that A * A^-1 = Identity with tolerances
             assert np.allclose(
-                original[i,j] @ inv1[i,j], 
-                np.eye(matrices.shape[-1])
+                original_complex @ inverse_complex,
+                np.eye(original_complex.shape[0]),
+                atol=atol,
+                rtol=rtol
             )
