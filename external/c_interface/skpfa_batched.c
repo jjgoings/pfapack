@@ -272,115 +272,118 @@ int skpfa_batched_4d_z_with_inverse(
         size_t total_matrices = (size_t)outer_batch_size * inner_batch_size;
         for (size_t i = 0; i < total_matrices; i++) {
             pfaffians[i] = doublecmplx_one;
+            // Assuming the inverse of a 0x0 matrix is also a 0x0 matrix, which can be treated as an empty operation
         }
         return 0;
     }
 
-    // Allocate aligned workspace for single matrix processing
-    size_t matrix_size = (size_t)N * N;
-    doublecmplx *work_matrix = NULL;
-    doublecmplx *work_pfaffian = NULL;  // Separate workspace for Pfaffian
-    doublecmplx *work = NULL;
-    int *ipiv = NULL;
-    int *iwork = NULL;
-    double *rwork = NULL;
+    // Calculate total number of matrices
+    const size_t total_matrices = (size_t)outer_batch_size * inner_batch_size;
+    const size_t matrix_size = (size_t)N * N;
+
+    // Step 1: Allocate initial buffer for work_matrix, work_pfaffian, ipiv, iwork, rwork
+    size_t initial_buffer_size = 
+        sizeof(doublecmplx) * 2 * matrix_size + // work_matrix and work_pfaffian
+        sizeof(int) * 2 * N +                  // ipiv and iwork
+        sizeof(double) * (N - 1);             // rwork
+
+    void *initial_buffer = NULL;
+    if (posix_memalign(&initial_buffer, 64, initial_buffer_size) != 0)
+        return -100;
+
+    // Partition the buffer
+    doublecmplx *work_matrix = (doublecmplx *)initial_buffer;
+    doublecmplx *work_pfaffian = work_matrix + matrix_size;
+    int *ipiv = (int *)(work_pfaffian + matrix_size);
+    int *iwork = ipiv + N;
+    double *rwork = (double *)(iwork + N);
+
+    // Step 2: Perform workspace queries to determine optimal lwork
+    // Initialize variables for workspace queries
+    int lwork_pf = -1;
+    int lwork_inv = -1;
+    doublecmplx qwork_pf = 0.0;
+    doublecmplx qwork_inv = 0.0;
     int info = 0;
     int ldim = N;
 
-    // Allocate all required memory with alignment
-    if (posix_memalign((void **)&work_matrix, 64, sizeof(doublecmplx) * matrix_size) != 0)
-        return -100;
-    if (posix_memalign((void **)&work_pfaffian, 64, sizeof(doublecmplx) * matrix_size) != 0) {
-        free(work_matrix);
-        return -101;
-    }
-    if (posix_memalign((void **)&ipiv, 64, sizeof(int) * N) != 0) {
-        free(work_matrix);
-        free(work_pfaffian);
-        return -102;
-    }
-    if (posix_memalign((void **)&iwork, 64, sizeof(int) * N) != 0) {
-        free(work_matrix);
-        free(work_pfaffian);
-        free(ipiv);
-        return -103;
-    }
-    if (posix_memalign((void **)&rwork, 64, sizeof(double) * (N - 1)) != 0) {
-        free(work_matrix);
-        free(work_pfaffian);
-        free(ipiv);
-        free(iwork);
-        return -104;
-    }
-
-    // Workspace queries for both operations
-    int lwork_pf = -1;
-    int lwork_inv = -1;
-    doublecmplx qwork_pf, qwork_inv;
-
     // Query optimal workspace for Pfaffian
     PFAPACK_zskpfa(&uplo, &mthd, &N, work_pfaffian, &ldim, &qwork_pf,
-                   iwork, &qwork_pf, &lwork_pf, rwork, &info);
-    if (info != 0) goto cleanup;
+                  iwork, &qwork_pf, &lwork_pf, rwork, &info);
+    if (info != 0) {
+        free(initial_buffer);
+        return info;
+    }
 
     // Query optimal workspace for inverse
     zgetri_(&N, work_matrix, &ldim, ipiv, &qwork_inv, &lwork_inv, &info);
-    if (info != 0) goto cleanup;
+    if (info != 0) {
+        free(initial_buffer);
+        return info;
+    }
 
-    // Allocate aligned workspace with maximum size needed
-    int lwork = MAX((int)creal(qwork_pf), (int)creal(qwork_inv));
+    // Determine the maximum lwork needed
+    int lwork = (int)(creal(qwork_pf) > creal(qwork_inv) ? creal(qwork_pf) : creal(qwork_inv));
+
+    // Step 3: Allocate 'work' buffer based on the maximum lwork
+    doublecmplx *work = NULL;
     if (posix_memalign((void **)&work, 64, sizeof(doublecmplx) * lwork) != 0) {
-        info = -105;
-        goto cleanup;
+        free(initial_buffer);
+        return -105;
     }
 
     // Process each matrix in the batch
-    for (int s = 0; s < outer_batch_size; s++) {
-        for (int g = 0; g < inner_batch_size; g++) {
-            size_t idx = (size_t)s * inner_batch_size + g;
-            doublecmplx *current_matrix = A_batch + idx * matrix_size;
-            doublecmplx *current_inverse = inverses + idx * matrix_size;
-            
-            // Copy and transpose matrix for Pfaffian computation
-            transpose_matrix_complex(current_matrix, work_pfaffian, N);
-            
-            // Compute Pfaffian
-            PFAPACK_zskpfa(&uplo, &mthd, &N, work_pfaffian, &ldim, &pfaffians[idx],
-                          iwork, work, &lwork, rwork, &info);
-            if (info != 0) goto cleanup;
+    for (size_t idx = 0; idx < total_matrices; idx++) {
+        doublecmplx *current_matrix = A_batch + idx * matrix_size;
+        doublecmplx *current_inverse = inverses + idx * matrix_size;
 
-            // Copy and transpose matrix again for inverse computation
-            transpose_matrix_complex(current_matrix, work_matrix, N);
-            
-            // Make sure full matrix is filled (not just upper/lower triangular)
-            for (int i = 0; i < N; i++) {
-                for (int j = i + 1; j < N; j++) {
-                    work_matrix[j + i * N] = -work_matrix[i + j * N];
-                }
-            }
+        // Transpose matrix for Pfaffian computation
+        transpose_matrix_complex(current_matrix, work_pfaffian, N);
 
-            // Compute LU decomposition
-            zgetrf_(&N, &N, work_matrix, &ldim, ipiv, &info);
-            if (info != 0) goto cleanup;
-
-            // Compute inverse
-            zgetri_(&N, work_matrix, &ldim, ipiv, work, &lwork, &info);
-            if (info != 0) goto cleanup;
-
-            // Copy result back using block transposition
-            transpose_matrix_complex(work_matrix, current_inverse, N);
+        // Compute Pfaffian
+        PFAPACK_zskpfa(&uplo, &mthd, &N, work_pfaffian, &ldim, &pfaffians[idx],
+                      iwork, work, &lwork, rwork, &info);
+        if (info != 0) {
+            free(work);
+            free(initial_buffer);
+            return info;
         }
+
+        // Transpose matrix again for inverse computation
+        transpose_matrix_complex(current_matrix, work_matrix, N);
+
+        // Ensure the full matrix is filled (assuming skew-symmetric property)
+        for (int i = 0; i < N; i++) {
+            for (int j = i + 1; j < N; j++) {
+                work_matrix[j + i * N] = -work_matrix[i + j * N];
+            }
+        }
+
+        // Compute LU decomposition
+        zgetrf_(&N, &N, work_matrix, &ldim, ipiv, &info);
+        if (info != 0) {
+            free(work);
+            free(initial_buffer);
+            return info;
+        }
+
+        // Compute inverse
+        zgetri_(&N, work_matrix, &ldim, ipiv, work, &lwork, &info);
+        if (info != 0) {
+            free(work);
+            free(initial_buffer);
+            return info;
+        }
+
+        // Transpose back the inverse to C order
+        transpose_matrix_complex(work_matrix, current_inverse, N);
     }
 
-cleanup:
-    free(work_matrix);
-    free(work_pfaffian);
-    free(ipiv);
-    free(iwork);
-    free(rwork);
-    if (work) free(work);
-    
-    return info;
+    // Cleanup
+    free(work);
+    free(initial_buffer);
+
+    return 0;
 }
 
 int skpfa_batched_4d_d_with_inverse(
@@ -404,106 +407,116 @@ int skpfa_batched_4d_d_with_inverse(
         size_t total_matrices = (size_t)outer_batch_size * inner_batch_size;
         for (size_t i = 0; i < total_matrices; i++) {
             pfaffians[i] = 1.0;
+            // Assuming the inverse of a 0x0 matrix is also a 0x0 matrix, which can be treated as an empty operation
         }
         return 0;
     }
 
-    // Allocate aligned workspace for single matrix processing
-    size_t matrix_size = (size_t)N * N;
-    double *work_matrix = NULL;
-    double *work_pfaffian = NULL;  // Separate workspace for Pfaffian
-    double *work = NULL;
-    int *ipiv = NULL;
-    int *iwork = NULL;
+    // Calculate total number of matrices
+    const size_t total_matrices = (size_t)outer_batch_size * inner_batch_size;
+    const size_t matrix_size = (size_t)N * N;
+
+    // Step 1: Allocate initial buffer for work_matrix, work_pfaffian, ipiv, iwork
+    size_t initial_buffer_size = 
+        sizeof(double) * 2 * matrix_size + // work_matrix and work_pfaffian
+        sizeof(int) * 2 * N;               // ipiv and iwork
+
+    void *initial_buffer = NULL;
+    if (posix_memalign(&initial_buffer, 64, initial_buffer_size) != 0)
+        return -100;
+
+    // Partition the buffer
+    double *work_matrix = (double *)initial_buffer;
+    double *work_pfaffian = work_matrix + matrix_size;
+    int *ipiv = (int *)(work_pfaffian + matrix_size);
+    int *iwork = ipiv + N;
+
+    // Step 2: Perform workspace queries to determine optimal lwork
+    // Initialize variables for workspace queries
+    int lwork_pf = -1;
+    int lwork_inv = -1;
+    double qwork_pf = 0.0;
+    double qwork_inv = 0.0;
     int info = 0;
     int ldim = N;
 
-    // Allocate all required memory with alignment
-    if (posix_memalign((void **)&work_matrix, 64, sizeof(double) * matrix_size) != 0)
-        return -100;
-    if (posix_memalign((void **)&work_pfaffian, 64, sizeof(double) * matrix_size) != 0) {
-        free(work_matrix);
-        return -101;
-    }
-    if (posix_memalign((void **)&ipiv, 64, sizeof(int) * N) != 0) {
-        free(work_matrix);
-        free(work_pfaffian);
-        return -102;
-    }
-    if (posix_memalign((void **)&iwork, 64, sizeof(int) * N) != 0) {
-        free(work_matrix);
-        free(work_pfaffian);
-        free(ipiv);
-        return -103;
-    }
-
-    // Workspace queries for both operations
-    int lwork_pf = -1;
-    int lwork_inv = -1;
-    double qwork_pf, qwork_inv;
-
     // Query optimal workspace for Pfaffian
     PFAPACK_dskpfa(&uplo, &mthd, &N, work_pfaffian, &ldim, &qwork_pf,
-                   iwork, &qwork_pf, &lwork_pf, &info);
-    if (info != 0) goto cleanup;
+                  iwork, &qwork_pf, &lwork_pf, &info);
+    if (info != 0) {
+        free(initial_buffer);
+        return info;
+    }
 
     // Query optimal workspace for inverse
     dgetri_(&N, work_matrix, &ldim, ipiv, &qwork_inv, &lwork_inv, &info);
-    if (info != 0) goto cleanup;
+    if (info != 0) {
+        free(initial_buffer);
+        return info;
+    }
 
-    // Allocate aligned workspace with maximum size needed
-    int lwork = MAX((int)qwork_pf, (int)qwork_inv);
+    // Determine the maximum lwork needed
+    int lwork = (int)(qwork_pf > qwork_inv ? qwork_pf : qwork_inv);
+
+    // Step 3: Allocate 'work' buffer based on the maximum lwork
+    double *work = NULL;
     if (posix_memalign((void **)&work, 64, sizeof(double) * lwork) != 0) {
-        info = -104;
-        goto cleanup;
+        free(initial_buffer);
+        return -104;
     }
 
     // Process each matrix in the batch
-    for (int s = 0; s < outer_batch_size; s++) {
-        for (int g = 0; g < inner_batch_size; g++) {
-            size_t idx = (size_t)s * inner_batch_size + g;
-            double *current_matrix = A_batch + idx * matrix_size;
-            double *current_inverse = inverses + idx * matrix_size;
-            
-            // Copy and transpose matrix for Pfaffian computation
-            transpose_matrix(current_matrix, work_pfaffian, N);
-            
-            // Compute Pfaffian
-            PFAPACK_dskpfa(&uplo, &mthd, &N, work_pfaffian, &ldim, &pfaffians[idx],
-                          iwork, work, &lwork, &info);
-            if (info != 0) goto cleanup;
+    for (size_t idx = 0; idx < total_matrices; idx++) {
+        double *current_matrix = A_batch + idx * matrix_size;
+        double *current_inverse = inverses + idx * matrix_size;
 
-            // Copy and transpose matrix again for inverse computation
-            transpose_matrix(current_matrix, work_matrix, N);
-            
-            // Make sure full matrix is filled (not just upper/lower triangular)
-            for (int i = 0; i < N; i++) {
-                for (int j = i + 1; j < N; j++) {
-                    work_matrix[j + i * N] = -work_matrix[i + j * N];
-                }
-            }
+        // Transpose matrix for Pfaffian computation
+        transpose_matrix(current_matrix, work_pfaffian, N);
 
-            // Compute LU decomposition
-            dgetrf_(&N, &N, work_matrix, &ldim, ipiv, &info);
-            if (info != 0) goto cleanup;
-
-            // Compute inverse
-            dgetri_(&N, work_matrix, &ldim, ipiv, work, &lwork, &info);
-            if (info != 0) goto cleanup;
-
-            // Copy result back using block transposition
-            transpose_matrix(work_matrix, current_inverse, N);
+        // Compute Pfaffian
+        PFAPACK_dskpfa(&uplo, &mthd, &N, work_pfaffian, &ldim, &pfaffians[idx],
+                      iwork, work, &lwork, &info);
+        if (info != 0) {
+            free(work);
+            free(initial_buffer);
+            return info;
         }
+
+        // Transpose matrix again for inverse computation
+        transpose_matrix(current_matrix, work_matrix, N);
+
+        // Ensure the full matrix is filled (assuming skew-symmetric property)
+        for (int i = 0; i < N; i++) {
+            for (int j = i + 1; j < N; j++) {
+                work_matrix[j + i * N] = -work_matrix[i + j * N];
+            }
+        }
+
+        // Compute LU decomposition
+        dgetrf_(&N, &N, work_matrix, &ldim, ipiv, &info);
+        if (info != 0) {
+            free(work);
+            free(initial_buffer);
+            return info;
+        }
+
+        // Compute inverse
+        dgetri_(&N, work_matrix, &ldim, ipiv, work, &lwork, &info);
+        if (info != 0) {
+            free(work);
+            free(initial_buffer);
+            return info;
+        }
+
+        // Transpose back the inverse to C order
+        transpose_matrix(work_matrix, current_inverse, N);
     }
 
-cleanup:
-    free(work_matrix);
-    free(work_pfaffian);
-    free(ipiv);
-    free(iwork);
-    if (work) free(work);
-    
-    return info;
+    // Cleanup
+    free(work);
+    free(initial_buffer);
+
+    return 0;
 }
 
 
