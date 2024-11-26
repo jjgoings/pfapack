@@ -27,69 +27,50 @@ def _init(which):
     return func
 
 def _init_batched(which, is_complex=False):
+    """Initialize a standard batched function."""
     func = getattr(lib, which)
     func.restype = ctypes.c_int
-    if not is_complex:
-        func.argtypes = [
-            ctypes.c_int,                                  # batch_size
-            ctypes.c_int,                                  # N
-            ndpointer(np.float64),                        # A_batch - removed F_CONTIGUOUS requirement
-            ndpointer(np.float64),                        # PFAFF_batch
-            ctypes.c_char_p,                              # UPLO
-            ctypes.c_char_p,                              # MTHD
-        ]
-    else:
-        func.argtypes = [
-            ctypes.c_int,                                  # batch_size
-            ctypes.c_int,                                  # N
-            ndpointer(np.complex128),                     # A_batch - removed F_CONTIGUOUS requirement
-            ndpointer(np.complex128),                     # PFAFF_batch
-            ctypes.c_char_p,                              # UPLO
-            ctypes.c_char_p,                              # MTHD
-        ]
-    return func
-
-def _init_batched_4d(which):
-    func = getattr(lib, which)
-    func.restype = ctypes.c_int
+    dtype = np.complex128 if is_complex else np.float64
     func.argtypes = [
-        ctypes.c_int,                          # outer_batch_size
-        ctypes.c_int,                          # inner_batch_size
-        ctypes.c_int,                          # N
-        ndpointer(np.float64),                 # A_batch 
-        ndpointer(np.float64),                 # PFAFF_batch
-        ctypes.c_char_p,                       # UPLO
-        ctypes.c_char_p,                       # MTHD
+        ctypes.c_int,                # batch_size
+        ctypes.c_int,                # N
+        ndpointer(dtype),            # A_batch
+        ndpointer(dtype),            # PFAFF_batch
+        ctypes.c_char_p,             # UPLO
+        ctypes.c_char_p,             # MTHD
     ]
     return func
 
-def _init_batched_4d_z(which):
+def _init_batched_4d(which, is_complex=False):
+    """Initialize a batched 4D function without inverse."""
     func = getattr(lib, which)
     func.restype = ctypes.c_int
+    dtype = np.complex128 if is_complex else np.float64
     func.argtypes = [
-        ctypes.c_int,                          # outer_batch_size
-        ctypes.c_int,                          # inner_batch_size 
-        ctypes.c_int,                          # N
-        ndpointer(np.complex128),              # A_batch
-        ndpointer(np.complex128),              # PFAFF_batch
-        ctypes.c_char_p,                       # UPLO
-        ctypes.c_char_p,                       # MTHD
+        ctypes.c_int,                # outer_batch_size
+        ctypes.c_int,                # inner_batch_size
+        ctypes.c_int,                # N
+        ndpointer(dtype),            # A_batch
+        ndpointer(dtype),            # PFAFF_batch
+        ctypes.c_char_p,             # UPLO
+        ctypes.c_char_p,             # MTHD
     ]
     return func
 
-def _init_batched_4d_z_with_inverse(which):
-    """Initialize the batched 4D with inverse function."""
+def _init_batched_4d_with_inverse(which, is_complex=False):
+    """Initialize a batched 4D with inverse function."""
     func = getattr(lib, which)
     func.restype = ctypes.c_int
+    dtype = np.complex128 if is_complex else np.float64
     func.argtypes = [
-        ctypes.c_int,                          # outer_batch_size
-        ctypes.c_int,                          # inner_batch_size
-        ctypes.c_int,                          # N
-        ndpointer(np.complex128),              # A_batch
-        ndpointer(np.complex128),              # pfaffians
-        ndpointer(np.complex128),              # inverses
-        ctypes.c_char_p,                       # UPLO
-        ctypes.c_char_p,                       # MTHD
+        ctypes.c_int,                # outer_batch_size
+        ctypes.c_int,                # inner_batch_size
+        ctypes.c_int,                # N
+        ndpointer(dtype),            # A_batch
+        ndpointer(dtype),            # pfaffians
+        ndpointer(dtype),            # inverses
+        ctypes.c_char_p,             # UPLO
+        ctypes.c_char_p,             # MTHD
     ]
     return func
 
@@ -99,11 +80,12 @@ skpfa_z = _init("skpfa_z")  # Pfaffian for complex double
 skpf10_z = _init("skpf10_z")
 
 functions = {
-    "skpfa_batched_d": _init_batched("skpfa_batched_d", is_complex=False),
+    "skpfa_batched_d": _init_batched("skpfa_batched_d"),
     "skpfa_batched_z": _init_batched("skpfa_batched_z", is_complex=True),
     "skpfa_batched_4d_d": _init_batched_4d("skpfa_batched_4d_d"),
-    "skpfa_batched_4d_z": _init_batched_4d_z("skpfa_batched_4d_z"),
-    "skpfa_batched_4d_z_with_inverse": _init_batched_4d_z_with_inverse("skpfa_batched_4d_z_with_inverse")
+    "skpfa_batched_4d_z": _init_batched_4d("skpfa_batched_4d_z", is_complex=True),
+    "skpfa_batched_4d_d_with_inverse": _init_batched_4d_with_inverse("skpfa_batched_4d_d_with_inverse"),
+    "skpfa_batched_4d_z_with_inverse": _init_batched_4d_with_inverse("skpfa_batched_4d_z_with_inverse", is_complex=True)
 }
 
 def from_exp(x, exp):
@@ -292,9 +274,9 @@ def pfaffian_batched_4d(matrices, uplo="U", method="P"):
     
     return result
 
-def pfaffian_batched_4d_z_with_inverse(matrices, *, uplo="U", method="P", inplace=False):
+def pfaffian_batched_4d_with_inverse(matrices, *, uplo="U", method="P", inplace=False):
     """
-    Compute Pfaffians and inverses for a batch of complex matrices.
+    Compute Pfaffians and inverses for a batch of real or complex matrices.
 
     Parameters
     ----------
@@ -321,25 +303,33 @@ def pfaffian_batched_4d_z_with_inverse(matrices, *, uplo="U", method="P", inplac
     if M != N:
         raise ValueError("Last two dimensions must be square (N x N)")
 
-    # Convert to complex if needed
-    if not np.iscomplexobj(matrices):
-        matrices = matrices.astype(np.complex128)
-    elif matrices.dtype != np.complex128:
-        matrices = matrices.astype(np.complex128)
+    # Determine type and prepare arrays
+    if np.iscomplexobj(matrices):
+        # Convert to complex128 if needed
+        if matrices.dtype != np.complex128:
+            matrices = matrices.astype(np.complex128)
+        dtype = np.complex128
+        func = functions["skpfa_batched_4d_z_with_inverse"]
+    else:
+        # Convert to float64 if needed
+        if matrices.dtype != np.float64:
+            matrices = matrices.astype(np.float64)
+        dtype = np.float64
+        func = functions["skpfa_batched_4d_d_with_inverse"]
 
     # Ensure C-contiguous
     if not matrices.flags['C_CONTIGUOUS']:
         matrices = np.ascontiguousarray(matrices)
 
     # Prepare output arrays
-    pfaffians = np.empty((outer_batch_size, inner_batch_size), dtype=np.complex128)
+    pfaffians = np.empty((outer_batch_size, inner_batch_size), dtype=dtype)
     if inplace:
         inverses = matrices
     else:
         inverses = np.empty_like(matrices)
 
     # Call C function
-    success = functions["skpfa_batched_4d_z_with_inverse"](
+    success = func(
         outer_batch_size,
         inner_batch_size,
         N,

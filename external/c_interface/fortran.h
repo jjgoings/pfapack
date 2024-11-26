@@ -16,21 +16,36 @@
 
 #endif
 
-// Move LAPACK declarations to the top, before any complex type definitions
+// LAPACK function declarations
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// LAPACK function declarations
+// LU decomposition routines
+void dgetrf_(int* m, int* n, double* a, int* lda,
+             int* ipiv, int* info);
 void zgetrf_(int* m, int* n, void* a, int* lda,
              int* ipiv, int* info);
+
+// Matrix inverse routines
+void dgetri_(int* n, double* a, int* lda, int* ipiv,
+             double* work, int* lwork, int* info);
 void zgetri_(int* n, void* a, int* lda, int* ipiv,
              void* work, int* lwork, int* info);
+
+// Pfaffian computation routines
+void PFAPACK_dskpfa_(char* uplo, char* mthd, int* n, double* a, int* lda,
+                     double* pfaff, int* iwork, double* work, int* lwork,
+                     int* info);
+void PFAPACK_zskpfa_(char* uplo, char* mthd, int* n, void* a, int* lda,
+                     void* pfaff, int* iwork, void* work, int* lwork,
+                     double* rwork, int* info);
 
 #ifdef __cplusplus
 }
 #endif
 
+// Complex number handling based on compiler support
 #ifdef CPLUSPLUS_COMPLEX
 
 #include <complex>
@@ -47,7 +62,7 @@ inline float imagf(floatcmplx x)
 
 #elif defined(C99_COMPLEX)
 
-#include "complex.h"
+#include <complex.h>
 
 typedef float complex floatcmplx;
 typedef double complex doublecmplx;
@@ -64,11 +79,11 @@ inline float imagf(floatcmplx x)
 #elif defined(STRUCT_COMPLEX)
 
 typedef struct {
-  double re, im;
+    double re, im;
 } doublecmplx;
 
 typedef struct {
-  float re, im;
+    float re, im;
 } floatcmplx;
 
 #define real(x) x.re

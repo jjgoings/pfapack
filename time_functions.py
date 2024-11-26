@@ -1,9 +1,9 @@
 import time
 import numpy as np
-from pfapack.ctypes import pfaffian as cpfaffian
-from pfapack.ctypes import pfaffian_batched as cpfaffian_batched
-from pfapack.ctypes import pfaffian_batched_4d as cpfaffian_batched_4d
-from pfapack.ctypes import pfaffian_batched_4d_z_with_inverse as cpfaffian_batched_4d_z_with_inverse
+from pfapack.ctypes import pfaffian
+from pfapack.ctypes import pfaffian_batched
+from pfapack.ctypes import pfaffian_batched_4d
+from pfapack.ctypes import pfaffian_batched_4d_with_inverse
 
 def create_test_matrices(num_replicas, num_walkers, N, seed=None):
     """Create random skew-symmetric test matrices."""
@@ -34,10 +34,10 @@ def main():
     print(f"Number of test runs: {num_test_runs}")
 
     methods = {
-        'pfaffian': cpfaffian,
-        'batched': cpfaffian_batched,
-        'batched_4d': cpfaffian_batched_4d,
-        'batched_4d_z_with_inverse': cpfaffian_batched_4d_z_with_inverse
+        'pfaffian': pfaffian,
+        'batched': pfaffian_batched,
+        'batched_4d': pfaffian_batched_4d,
+        'batched_4d_with_inverse': pfaffian_batched_4d_with_inverse
     }
 
     results = {name: [] for name in methods}
@@ -68,7 +68,7 @@ def main():
                 times, vals = time_function(
                     lambda: func(A)
                 )
-            elif name == 'batched_4d_z_with_inverse':
+            elif name == 'batched_4d_with_inverse':
                 # With inverse computation - now using complex arrays directly
                 A_copy = A.copy()  # Create copy to avoid modifying original
                 times, vals = time_function(
@@ -89,16 +89,16 @@ def main():
                 if name != 'pfaffian':
                     if name == 'batched':
                         error = abs(vals[0] - ref_val)
-                    elif name == 'batched_4d' or name == 'batched_4d_z_with_inverse':
+                    elif name == 'batched_4d' or name == 'batched_4d_with_inverse':
                         error = abs(vals[0,0] - ref_val)
                     else:
                         continue
                     print(f"Error {name} vs single: {error:.2e}")
 
             # Additional validation for inverse computation
-            if 'batched_4d_z_with_inverse' in pfaffian_values:
+            if 'batched_4d_with_inverse' in pfaffian_values:
                 print("\nValidating inverse computation...")
-                pfaffs, invs = methods['batched_4d_z_with_inverse'](A.copy())
+                pfaffs, invs = methods['batched_4d_with_inverse'](A.copy())
                 # Check A * A^(-1) = I for first matrix
                 prod = np.matmul(A[0, 0], invs[0, 0])
                 error = np.max(np.abs(prod - np.eye(N)))

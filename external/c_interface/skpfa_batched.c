@@ -177,19 +177,18 @@ int skpfa_batched_4d_d(int outer_batch_size, int inner_batch_size, int N,
         for (int idx = 0; idx < total_matrices; idx++) {
             // Get pointers to current matrix and output
             double *A = A_batch + idx * N * N;
-            double *pfaff = PFAFF_batch + idx;
-            
-            // Convert from C to Fortran order
+
+            // Convert from C to Fortran order using block transposition
             transpose_matrix(A, A_work, N);
-            
+
             // Compute Pfaffian
-            int ret = skpfa_d(N, A_work, pfaff, UPLO, MTHD);
+            int ret = skpfa_d(N, A_work, &PFAFF_batch[idx], UPLO, MTHD);
             if (ret != 0) {
                 free(A_work);
                 return ret;
             }
         }
-        
+
         free(A_work);
     }
     else {
@@ -203,7 +202,6 @@ int skpfa_batched_4d_d(int outer_batch_size, int inner_batch_size, int N,
     return 0;
 }
 
-// Complex double precision batched 4D implementation
 int skpfa_batched_4d_z(int outer_batch_size, int inner_batch_size, int N,
                        doublecmplx *A_batch, doublecmplx *PFAFF_batch,
                        const char *UPLO, const char *MTHD)
@@ -228,23 +226,18 @@ int skpfa_batched_4d_z(int outer_batch_size, int inner_batch_size, int N,
         for (int idx = 0; idx < total_matrices; idx++) {
             // Get pointers to current matrix and output
             doublecmplx *A = A_batch + idx * N * N;
-            doublecmplx *pfaff = PFAFF_batch + idx;
-            
-            // Copy and transpose the matrix
-            for (int i = 0; i < N; i++) {
-                for (int j = 0; j < N; j++) {
-                    A_work[i + j * N] = A[i * N + j];
-                }
-            }
-            
+
+            // Convert from C to Fortran order using block transposition
+            transpose_matrix_complex(A, A_work, N);
+
             // Compute Pfaffian
-            int ret = skpfa_z(N, A_work, pfaff, UPLO, MTHD);
+            int ret = skpfa_z(N, A_work, &PFAFF_batch[idx], UPLO, MTHD);
             if (ret != 0) {
                 free(A_work);
                 return ret;
             }
         }
-        
+
         free(A_work);
     }
     else {
@@ -258,12 +251,11 @@ int skpfa_batched_4d_z(int outer_batch_size, int inner_batch_size, int N,
     return 0;
 }
 
-
 int skpfa_batched_4d_z_with_inverse(
     int outer_batch_size, int inner_batch_size, int N,
-    doublecmplx *A_batch,           // Shape: (outer_batch, inner_batch, N, N)
-    doublecmplx *pfaffians,         // Shape: (outer_batch, inner_batch)
-    doublecmplx *inverses,          // Shape: (outer_batch, inner_batch, N, N)
+    doublecmplx *A_batch, 
+    doublecmplx *pfaffians,
+    doublecmplx *inverses,
     const char *UPLO, const char *MTHD)
 {
     char uplo = toupper(UPLO[0]);
@@ -284,33 +276,41 @@ int skpfa_batched_4d_z_with_inverse(
         return 0;
     }
 
-    // Allocate workspace for single matrix processing
+    // Allocate aligned workspace for single matrix processing
     size_t matrix_size = (size_t)N * N;
     doublecmplx *work_matrix = NULL;
+    doublecmplx *work_pfaffian = NULL;  // Separate workspace for Pfaffian
+    doublecmplx *work = NULL;
     int *ipiv = NULL;
     int *iwork = NULL;
     double *rwork = NULL;
-    doublecmplx *work = NULL;
     int info = 0;
     int ldim = N;
 
-    // Allocate all required memory
-    if (posix_memalign((void **)&work_matrix, 64, sizeof(doublecmplx) * matrix_size) != 0) 
+    // Allocate all required memory with alignment
+    if (posix_memalign((void **)&work_matrix, 64, sizeof(doublecmplx) * matrix_size) != 0)
         return -100;
-    if (!(ipiv = (int *)malloc(sizeof(int) * N))) {
+    if (posix_memalign((void **)&work_pfaffian, 64, sizeof(doublecmplx) * matrix_size) != 0) {
         free(work_matrix);
         return -101;
     }
-    if (!(iwork = (int *)malloc(sizeof(int) * N))) {
+    if (posix_memalign((void **)&ipiv, 64, sizeof(int) * N) != 0) {
         free(work_matrix);
-        free(ipiv);
+        free(work_pfaffian);
         return -102;
     }
-    if (!(rwork = (double *)malloc(sizeof(double) * (N - 1)))) {
+    if (posix_memalign((void **)&iwork, 64, sizeof(int) * N) != 0) {
         free(work_matrix);
+        free(work_pfaffian);
+        free(ipiv);
+        return -103;
+    }
+    if (posix_memalign((void **)&rwork, 64, sizeof(double) * (N - 1)) != 0) {
+        free(work_matrix);
+        free(work_pfaffian);
         free(ipiv);
         free(iwork);
-        return -103;
+        return -104;
     }
 
     // Workspace queries for both operations
@@ -319,7 +319,7 @@ int skpfa_batched_4d_z_with_inverse(
     doublecmplx qwork_pf, qwork_inv;
 
     // Query optimal workspace for Pfaffian
-    PFAPACK_zskpfa(&uplo, &mthd, &N, work_matrix, &ldim, &qwork_pf,
+    PFAPACK_zskpfa(&uplo, &mthd, &N, work_pfaffian, &ldim, &qwork_pf,
                    iwork, &qwork_pf, &lwork_pf, rwork, &info);
     if (info != 0) goto cleanup;
 
@@ -327,10 +327,10 @@ int skpfa_batched_4d_z_with_inverse(
     zgetri_(&N, work_matrix, &ldim, ipiv, &qwork_inv, &lwork_inv, &info);
     if (info != 0) goto cleanup;
 
-    // Allocate workspace with maximum size needed - using MAX macro
+    // Allocate aligned workspace with maximum size needed
     int lwork = MAX((int)creal(qwork_pf), (int)creal(qwork_inv));
-    if (!(work = (doublecmplx *)malloc(sizeof(doublecmplx) * lwork))) {
-        info = -104;
+    if (posix_memalign((void **)&work, 64, sizeof(doublecmplx) * lwork) != 0) {
+        info = -105;
         goto cleanup;
     }
 
@@ -339,18 +339,26 @@ int skpfa_batched_4d_z_with_inverse(
         for (int g = 0; g < inner_batch_size; g++) {
             size_t idx = (size_t)s * inner_batch_size + g;
             doublecmplx *current_matrix = A_batch + idx * matrix_size;
+            doublecmplx *current_inverse = inverses + idx * matrix_size;
             
-            // Copy matrix for Pfaffian computation
-            memcpy(work_matrix, current_matrix, matrix_size * sizeof(doublecmplx));
+            // Copy and transpose matrix for Pfaffian computation
+            transpose_matrix_complex(current_matrix, work_pfaffian, N);
             
             // Compute Pfaffian
-            PFAPACK_zskpfa(&uplo, &mthd, &N, work_matrix, &ldim, &pfaffians[idx],
+            PFAPACK_zskpfa(&uplo, &mthd, &N, work_pfaffian, &ldim, &pfaffians[idx],
                           iwork, work, &lwork, rwork, &info);
             if (info != 0) goto cleanup;
 
-            // Copy matrix for inverse computation
-            memcpy(work_matrix, current_matrix, matrix_size * sizeof(doublecmplx));
+            // Copy and transpose matrix again for inverse computation
+            transpose_matrix_complex(current_matrix, work_matrix, N);
             
+            // Make sure full matrix is filled (not just upper/lower triangular)
+            for (int i = 0; i < N; i++) {
+                for (int j = i + 1; j < N; j++) {
+                    work_matrix[j + i * N] = -work_matrix[i + j * N];
+                }
+            }
+
             // Compute LU decomposition
             zgetrf_(&N, &N, work_matrix, &ldim, ipiv, &info);
             if (info != 0) goto cleanup;
@@ -359,21 +367,145 @@ int skpfa_batched_4d_z_with_inverse(
             zgetri_(&N, work_matrix, &ldim, ipiv, work, &lwork, &info);
             if (info != 0) goto cleanup;
 
-            // Copy result to output
-            memcpy(inverses + idx * matrix_size, work_matrix, 
-                   matrix_size * sizeof(doublecmplx));
+            // Copy result back using block transposition
+            transpose_matrix_complex(work_matrix, current_inverse, N);
         }
     }
 
 cleanup:
     free(work_matrix);
+    free(work_pfaffian);
     free(ipiv);
     free(iwork);
     free(rwork);
-    free(work);
+    if (work) free(work);
     
     return info;
 }
+
+int skpfa_batched_4d_d_with_inverse(
+    int outer_batch_size, int inner_batch_size, int N,
+    double *A_batch, 
+    double *pfaffians,
+    double *inverses,
+    const char *UPLO, const char *MTHD)
+{
+    char uplo = toupper(UPLO[0]);
+    char mthd = toupper(MTHD[0]);
+
+    // Input validation
+    if (N < 0) return -1;
+    if (!A_batch || !pfaffians || !inverses) return -2;
+    if (uplo != 'U' && uplo != 'L') return -3;
+    if (mthd != 'P' && mthd != 'H') return -4;
+
+    // Handle N == 0 case
+    if (N == 0) {
+        size_t total_matrices = (size_t)outer_batch_size * inner_batch_size;
+        for (size_t i = 0; i < total_matrices; i++) {
+            pfaffians[i] = 1.0;
+        }
+        return 0;
+    }
+
+    // Allocate aligned workspace for single matrix processing
+    size_t matrix_size = (size_t)N * N;
+    double *work_matrix = NULL;
+    double *work_pfaffian = NULL;  // Separate workspace for Pfaffian
+    double *work = NULL;
+    int *ipiv = NULL;
+    int *iwork = NULL;
+    int info = 0;
+    int ldim = N;
+
+    // Allocate all required memory with alignment
+    if (posix_memalign((void **)&work_matrix, 64, sizeof(double) * matrix_size) != 0)
+        return -100;
+    if (posix_memalign((void **)&work_pfaffian, 64, sizeof(double) * matrix_size) != 0) {
+        free(work_matrix);
+        return -101;
+    }
+    if (posix_memalign((void **)&ipiv, 64, sizeof(int) * N) != 0) {
+        free(work_matrix);
+        free(work_pfaffian);
+        return -102;
+    }
+    if (posix_memalign((void **)&iwork, 64, sizeof(int) * N) != 0) {
+        free(work_matrix);
+        free(work_pfaffian);
+        free(ipiv);
+        return -103;
+    }
+
+    // Workspace queries for both operations
+    int lwork_pf = -1;
+    int lwork_inv = -1;
+    double qwork_pf, qwork_inv;
+
+    // Query optimal workspace for Pfaffian
+    PFAPACK_dskpfa(&uplo, &mthd, &N, work_pfaffian, &ldim, &qwork_pf,
+                   iwork, &qwork_pf, &lwork_pf, &info);
+    if (info != 0) goto cleanup;
+
+    // Query optimal workspace for inverse
+    dgetri_(&N, work_matrix, &ldim, ipiv, &qwork_inv, &lwork_inv, &info);
+    if (info != 0) goto cleanup;
+
+    // Allocate aligned workspace with maximum size needed
+    int lwork = MAX((int)qwork_pf, (int)qwork_inv);
+    if (posix_memalign((void **)&work, 64, sizeof(double) * lwork) != 0) {
+        info = -104;
+        goto cleanup;
+    }
+
+    // Process each matrix in the batch
+    for (int s = 0; s < outer_batch_size; s++) {
+        for (int g = 0; g < inner_batch_size; g++) {
+            size_t idx = (size_t)s * inner_batch_size + g;
+            double *current_matrix = A_batch + idx * matrix_size;
+            double *current_inverse = inverses + idx * matrix_size;
+            
+            // Copy and transpose matrix for Pfaffian computation
+            transpose_matrix(current_matrix, work_pfaffian, N);
+            
+            // Compute Pfaffian
+            PFAPACK_dskpfa(&uplo, &mthd, &N, work_pfaffian, &ldim, &pfaffians[idx],
+                          iwork, work, &lwork, &info);
+            if (info != 0) goto cleanup;
+
+            // Copy and transpose matrix again for inverse computation
+            transpose_matrix(current_matrix, work_matrix, N);
+            
+            // Make sure full matrix is filled (not just upper/lower triangular)
+            for (int i = 0; i < N; i++) {
+                for (int j = i + 1; j < N; j++) {
+                    work_matrix[j + i * N] = -work_matrix[i + j * N];
+                }
+            }
+
+            // Compute LU decomposition
+            dgetrf_(&N, &N, work_matrix, &ldim, ipiv, &info);
+            if (info != 0) goto cleanup;
+
+            // Compute inverse
+            dgetri_(&N, work_matrix, &ldim, ipiv, work, &lwork, &info);
+            if (info != 0) goto cleanup;
+
+            // Copy result back using block transposition
+            transpose_matrix(work_matrix, current_inverse, N);
+        }
+    }
+
+cleanup:
+    free(work_matrix);
+    free(work_pfaffian);
+    free(ipiv);
+    free(iwork);
+    if (work) free(work);
+    
+    return info;
+}
+
 
 #ifdef __cplusplus
 }
