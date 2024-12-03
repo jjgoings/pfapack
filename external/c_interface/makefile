@@ -1,4 +1,4 @@
-OBJECTS = skpfa_batched.o skpfa.o skpf10.o skbpfa.o skbpf10.o sktrf.o sktrd.o skbtrd.o
+OBJECTS = pfader.o skpfa_batched.o skpfa.o skpf10.o skbpfa.o skbpf10.o sktrf.o sktrd.o skbtrd.o
 
 CC = gcc
 CFLAGS = -O3 -fPIC -Wall -Wextra -std=c99 -fno-math-errno -ftree-vectorize -fomit-frame-pointer 
