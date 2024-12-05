@@ -90,6 +90,22 @@ def _init_pfaffian_deriv(which):
     ]
     return func
 
+def _init_pfaffian_deriv2(which):
+    func = getattr(lib, which)
+    func.restype = ctypes.c_int
+    func.argtypes = [
+        ctypes.c_int,                # n_sh
+        ctypes.c_int,                # n_grid
+        ndpointer(np.float64),       # weights
+        ctypes.c_int,                # n_sel
+        ndpointer(ctypes.c_int),     # selector
+        ctypes.c_int,                # N
+        ndpointer(np.complex128),    # db_mat
+        ndpointer(np.complex128),    # matrices_c_inv
+        ndpointer(np.complex128),    # pfaffian_deriv2
+    ]
+    return func
+
 skpfa_d = _init("skpfa_d")  # Pfaffian for real double
 skpf10_d = _init("skpf10_d")
 skpfa_z = _init("skpfa_z")  # Pfaffian for complex double
@@ -102,7 +118,8 @@ functions = {
     "skpfa_batched_4d_z": _init_batched_4d("skpfa_batched_4d_z", is_complex=True),
     "skpfa_batched_4d_d_with_inverse": _init_batched_4d_with_inverse("skpfa_batched_4d_d_with_inverse"),
     "skpfa_batched_4d_z_with_inverse": _init_batched_4d_with_inverse("skpfa_batched_4d_z_with_inverse", is_complex=True),
-    "pfaffian_deriv_1": _init_pfaffian_deriv("pfader_1")
+    "pfaffian_deriv_1": _init_pfaffian_deriv("pfader_1"),
+    "pfaffian_deriv_2": _init_pfaffian_deriv2("pfader_2")
 }
 
 def from_exp(x, exp):
@@ -392,3 +409,34 @@ def pfaffian_deriv_1(matrices_c_inv, db_mat, s, zs, pfaffian_deriv):
         raise RuntimeError(f"PFAPACK returned error code {success}")
 
     return pfaffian_deriv
+
+def pfaffian_deriv_2(matrices_c_inv, db_mat, s, zs, pfaffian_deriv2):
+    num_shadow, num_grid_points, n_sel, _ = matrices_c_inv.shape
+    _, n_q, _ = db_mat.shape
+    assert db_mat.shape == (num_shadow, n_q, n_q)
+    assert matrices_c_inv.shape == (num_shadow, num_grid_points, n_sel, n_sel)
+    assert len(s) == n_sel
+    assert len(zs) == num_grid_points
+    assert pfaffian_deriv2.shape == (num_shadow, num_grid_points)
+
+    zarray = np.array(zs)
+    selector = np.array(s, dtype=np.int32)
+    func = functions["pfaffian_deriv_2"]
+
+    # Call C function
+    success = func(
+        num_shadow,
+        num_grid_points,
+        zarray,
+        n_sel,
+        selector,
+        n_q,
+        db_mat,
+        matrices_c_inv,
+        pfaffian_deriv2
+    )
+
+    if success != 0:
+        raise RuntimeError(f"PFAPACK returned error code {success}")
+
+    return pfaffian_deriv2

@@ -26,6 +26,10 @@ void zgemv_(char* trans, int* m, int* n, void* alpha, void* a,
             int* lda, void* x, int* incx, void* beta, void* y,
             int* incy);
 
+void zgemm_(char* transa, char* transb, int* m, int* n, int* k, void* alpha, void* a,
+            int* lda, void* b, int* ldb, void* beta, void* c,
+            int* inc);
+
 // LU decomposition routines
 void dgetrf_(int* m, int* n, double* a, int* lda,
              int* ipiv, int* info);
