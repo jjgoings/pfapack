@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <complex.h>
 #include <ctype.h>
+#include <stdlib.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -349,34 +350,38 @@ int skpfa_batched_4d_z_with_inverse(
             return info;
         }
 
-        // Transpose matrix again for inverse computation
-        transpose_matrix_complex(current_matrix, work_matrix, N);
+        if (cabs(pfaffians[idx]) > 1e-12) {
 
-        // Ensure the full matrix is filled (assuming skew-symmetric property)
-        for (int i = 0; i < N; i++) {
-            for (int j = i + 1; j < N; j++) {
-                work_matrix[j + i * N] = -work_matrix[i + j * N];
+            // Transpose matrix again for inverse computation
+            transpose_matrix_complex(current_matrix, work_matrix, N);
+
+            // Ensure the full matrix is filled (assuming skew-symmetric property)
+            for (int i = 0; i < N; i++) {
+                for (int j = i + 1; j < N; j++) {
+                    work_matrix[j + i * N] = -work_matrix[i + j * N];
+                }
             }
+
+            // Compute LU decomposition
+            zgetrf_(&N, &N, work_matrix, &ldim, ipiv, &info);
+            if (info != 0) {
+                free(work);
+                free(initial_buffer);
+                return info;
+            }
+
+            // Compute inverse
+            zgetri_(&N, work_matrix, &ldim, ipiv, work, &lwork, &info);
+            if (info != 0) {
+                free(work);
+                free(initial_buffer);
+                return info;
+            }
+
+            // Transpose back the inverse to C order
+            transpose_matrix_complex(work_matrix, current_inverse, N);
         }
 
-        // Compute LU decomposition
-        zgetrf_(&N, &N, work_matrix, &ldim, ipiv, &info);
-        if (info != 0) {
-            free(work);
-            free(initial_buffer);
-            return info;
-        }
-
-        // Compute inverse
-        zgetri_(&N, work_matrix, &ldim, ipiv, work, &lwork, &info);
-        if (info != 0) {
-            free(work);
-            free(initial_buffer);
-            return info;
-        }
-
-        // Transpose back the inverse to C order
-        transpose_matrix_complex(work_matrix, current_inverse, N);
     }
 
     // Cleanup
@@ -482,34 +487,36 @@ int skpfa_batched_4d_d_with_inverse(
             return info;
         }
 
-        // Transpose matrix again for inverse computation
-        transpose_matrix(current_matrix, work_matrix, N);
+        if (abs(pfaffians[idx]) > 1e-12) {
+            // Transpose matrix again for inverse computation
+            transpose_matrix(current_matrix, work_matrix, N);
 
-        // Ensure the full matrix is filled (assuming skew-symmetric property)
-        for (int i = 0; i < N; i++) {
-            for (int j = i + 1; j < N; j++) {
-                work_matrix[j + i * N] = -work_matrix[i + j * N];
+            // Ensure the full matrix is filled (assuming skew-symmetric property)
+            for (int i = 0; i < N; i++) {
+                for (int j = i + 1; j < N; j++) {
+                    work_matrix[j + i * N] = -work_matrix[i + j * N];
+                }
             }
-        }
 
-        // Compute LU decomposition
-        dgetrf_(&N, &N, work_matrix, &ldim, ipiv, &info);
-        if (info != 0) {
-            free(work);
-            free(initial_buffer);
-            return info;
-        }
+            // Compute LU decomposition
+            dgetrf_(&N, &N, work_matrix, &ldim, ipiv, &info);
+            if (info != 0) {
+                free(work);
+                free(initial_buffer);
+                return info;
+            }
 
-        // Compute inverse
-        dgetri_(&N, work_matrix, &ldim, ipiv, work, &lwork, &info);
-        if (info != 0) {
-            free(work);
-            free(initial_buffer);
-            return info;
-        }
+            // Compute inverse
+            dgetri_(&N, work_matrix, &ldim, ipiv, work, &lwork, &info);
+            if (info != 0) {
+                free(work);
+                free(initial_buffer);
+                return info;
+            }
 
-        // Transpose back the inverse to C order
-        transpose_matrix(work_matrix, current_inverse, N);
+            // Transpose back the inverse to C order
+            transpose_matrix(work_matrix, current_inverse, N);
+        }
     }
 
     // Cleanup

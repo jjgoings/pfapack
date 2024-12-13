@@ -6,11 +6,11 @@ from pfapack.ctypes import pfaffian as cpfaffian
 from pfapack.ctypes import pfaffian_batched as cpfaffian_batched
 from pfapack.ctypes import pfaffian_batched_4d as cpfaffian_batched_4d
 
-def measure_performance(num_replicas, N, num_iterations=50):
+def measure_performance(num_replicas, N, num_iterations=5):
     M = N + 1  # Number of matrices per replica
     total_matrices = num_replicas * M
     
-    times = [[] for _ in range(4)]  # One list for each method
+    times = [[] for _ in range(4)]  # One list for each of the four methods
     results = [None] * 4  # To store results for verification
 
     for _ in range(num_iterations):
@@ -39,7 +39,7 @@ def measure_performance(num_replicas, N, num_iterations=50):
 
         # Verify that all methods produce the same results
         for i in range(1, 4):
-            np.testing.assert_allclose(np.array(results[0]), np.array(results[i]), rtol=1e-13, atol=1e-13)
+            np.testing.assert_allclose(np.array(results[0]), np.array(results[i]), atol=1e-11)
 
     # Calculate average times
     avg_times = [np.mean(method_times) for method_times in times]

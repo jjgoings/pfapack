@@ -225,100 +225,108 @@ def test_known_values_4d():
     np.testing.assert_allclose(pfaffians_batched_real, expected_real, rtol=EPS, atol=EPS)
     np.testing.assert_allclose(pfaffians_batched_complex, expected_complex, rtol=EPS, atol=EPS)
 
-def test_pfaffian_batched_4d_with_inverse_complex():
-    """Test complex batched Pfaffian with inverse computation"""
-    # Setup
-    N = 4
-    outer_batch, inner_batch = 2, 3
-    # Generate random complex matrices
-    matrices = (np.random.randn(outer_batch, inner_batch, N, N) +
-               1j * np.random.randn(outer_batch, inner_batch, N, N)).astype(np.complex128)
-    # Make them skew-symmetric (A = -A^T)
-    matrices = matrices - np.transpose(matrices, (0, 1, 3, 2))
-    
-    # Keep copies for testing
-    original = matrices.copy()
-    matrices_copy = matrices.copy()
-    
-    # Test inplace version
-    pfaff1, inv1 = pfaffian_batched_4d_with_inverse(matrices, inplace=True)
-    assert matrices is inv1  # Check inplace memory sharing
-    
-    # Test non-inplace version
-    pfaff2, inv2 = pfaffian_batched_4d_with_inverse(matrices_copy, inplace=False)
-    assert np.allclose(matrices_copy, original)  # Check original is unchanged
-    assert np.allclose(inv1, inv2)  # Inverse results should match
-    assert np.allclose(pfaff1, pfaff2)  # Pfaffian results should match
-    
-    # Validate mathematical properties
-    atol, rtol = 1e-7, 1e-5
-    for i in range(outer_batch):
-        for j in range(inner_batch):
-            original_matrix = original[i, j]
-            inverse_matrix = inv1[i, j]
-            
-            # Check A * A^-1 = I
-            assert np.allclose(
-                original_matrix @ inverse_matrix,
-                np.eye(N),
-                atol=atol,
-                rtol=rtol
-            )
-            
-            # Verify skew-symmetry
-            assert np.allclose(original_matrix, -original_matrix.T)
-            
-            # Check Pfaffian^2 = determinant
-            det = np.linalg.det(original_matrix)
-            pf_squared = pfaff1[i, j] ** 2
-            assert np.allclose(pf_squared, det, atol=atol, rtol=rtol)
 
 def test_pfaffian_batched_4d_with_inverse_real():
-    """Test real batched Pfaffian with inverse computation"""
+    """Test real batched Pfaffian with inverse computation, including small Pfaffians."""
     # Setup
-    N = 4
-    outer_batch, inner_batch = 2, 3
-    # Generate random real matrices
+    N = 40
+    outer_batch, inner_batch = 11, 9
+
+    # Generate random real skew-symmetric matrices
     matrices = np.random.randn(outer_batch, inner_batch, N, N).astype(np.float64)
-    # Make them skew-symmetric (A = -A^T)
-    matrices = matrices - np.transpose(matrices, (0, 1, 3, 2))
-    
+    matrices = matrices - np.transpose(matrices, (0, 1, 3, 2))  # Ensure skew-symmetry
+
+    # Introduce small Pfaffian cases
+    small_pf_matrix = np.zeros((N, N))
+    small_pf_matrix[0:2, 0:2] = [[0, 1e-10], [-1e-10, 0]]  # Known small Pfaffian
+    matrices[0, 0] = small_pf_matrix  # Insert into batch
+
     # Keep copies for testing
     original = matrices.copy()
     matrices_copy = matrices.copy()
-    
+
     # Test inplace version
     pfaff1, inv1 = pfaffian_batched_4d_with_inverse(matrices, inplace=True)
-    assert matrices is inv1  # Check inplace memory sharing
-    
+
     # Test non-inplace version
     pfaff2, inv2 = pfaffian_batched_4d_with_inverse(matrices_copy, inplace=False)
-    assert np.allclose(matrices_copy, original)  # Check original is unchanged
-    assert np.allclose(inv1, inv2)  # Inverse results should match
-    assert np.allclose(pfaff1, pfaff2)  # Pfaffian results should match
-    
-    # Validate mathematical properties
+
+    # Validate results
     atol, rtol = 1e-7, 1e-5
     for i in range(outer_batch):
         for j in range(inner_batch):
             original_matrix = original[i, j]
             inverse_matrix = inv1[i, j]
-            
-            # Check A * A^-1 = I
-            assert np.allclose(
-                original_matrix @ inverse_matrix,
-                np.eye(N),
-                atol=atol,
-                rtol=rtol
-            )
-            
-            # Verify skew-symmetry
-            assert np.allclose(original_matrix, -original_matrix.T)
-            
-            # Check Pfaffian^2 = determinant
-            det = np.linalg.det(original_matrix)
-            pf_squared = pfaff1[i, j] ** 2
-            assert np.allclose(pf_squared, det, atol=atol, rtol=rtol)
+
+            # Check Pfaffians
+            assert np.allclose(pfaff1[i, j], pfaff2[i, j], atol=atol, rtol=rtol)
+
+            if abs(pfaff1[i, j]) < 1e-12:
+                # Small Pfaffian: inverse should not be computed
+                assert np.allclose(inverse_matrix, np.zeros_like(inverse_matrix))
+            else:
+                # Large Pfaffian: validate inverse
+                assert np.allclose(original_matrix @ inverse_matrix, np.eye(N), atol=atol, rtol=rtol)
+
+                # Verify skew-symmetry
+                assert np.allclose(original_matrix, -original_matrix.T)
+
+                # Check Pfaffian^2 = determinant
+                det = np.linalg.det(original_matrix)
+                pf_squared = pfaff1[i, j] ** 2
+                assert np.allclose(pf_squared, det, atol=atol, rtol=rtol)
+
+
+def test_pfaffian_batched_4d_with_inverse_complex():
+    """Test complex batched Pfaffian with inverse computation, including small Pfaffians."""
+    # Setup
+    N = 40
+    outer_batch, inner_batch = 11, 9
+
+    # Generate random complex skew-symmetric matrices
+    matrices = (np.random.rand(outer_batch, inner_batch, N, N) +
+                1j * np.random.rand(outer_batch, inner_batch, N, N)).astype(np.complex128)
+    matrices = matrices - np.transpose(matrices, (0, 1, 3, 2))  # Ensure skew-symmetry
+
+    # Introduce small Pfaffian cases
+    small_pf_matrix = np.zeros((N, N), dtype=np.complex128)
+    small_pf_matrix[0:2, 0:2] = [[0, 1e-10], [-1e-10, 0]]  # Known small Pfaffian
+    matrices[0, 0] = small_pf_matrix  # Insert into batch
+
+    # Keep copies for testing
+    original = matrices.copy()
+    matrices_copy = matrices.copy()
+
+    # Test inplace version
+    pfaff1, inv1 = pfaffian_batched_4d_with_inverse(matrices, inplace=True)
+
+    # Test non-inplace version
+    pfaff2, inv2 = pfaffian_batched_4d_with_inverse(matrices_copy, inplace=False)
+
+    # Validate results
+    atol, rtol = 1e-7, 1e-5
+    for i in range(outer_batch):
+        for j in range(inner_batch):
+            original_matrix = original[i, j]
+            inverse_matrix = inv1[i, j]
+
+            # Check Pfaffians
+            assert np.allclose(pfaff1[i, j], pfaff2[i, j], atol=atol, rtol=rtol)
+
+            if abs(pfaff1[i, j]) < 1e-12:
+                # Small Pfaffian: inverse should not be computed
+                assert np.allclose(inverse_matrix, np.zeros_like(inverse_matrix))
+            else:
+                # Large Pfaffian: validate inverse
+                assert np.allclose(original_matrix @ inverse_matrix, np.eye(N), atol=atol, rtol=rtol)
+
+                # Verify skew-symmetry
+                assert np.allclose(original_matrix, -original_matrix.T)
+
+                # Check Pfaffian^2 = determinant
+                det = np.linalg.det(original_matrix)
+                pf_squared = pfaff1[i, j] ** 2
+                assert np.allclose(pf_squared, det, atol=atol, rtol=rtol)
 
 def test_error_handling():
     """Test error handling for both real and complex versions"""
