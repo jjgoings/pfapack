@@ -64,23 +64,21 @@ pfaffians, inverses = pfaffian_batched_4d_with_inverse(
 ### Pfaffian Derivatives
 ```python
 from pfapack.ctypes import pfaffian_deriv_1, pfaffian_deriv_2
-
 # First derivative
 pfaffian_deriv_1(
-    matrices_c_inv, # shape (num_shadow, num_grid, n_sel, n_sel)
-    db_mat,         # shape (num_shadow, N, N)
-    selector,       # indices for matrix elements
-    z_weights,      # weights for grid points
-    pfad_output     # pre-allocated output array (num_shadow, num_grid)
+    matrices_c_inv, # shape (outer_batch, inner_batch, n_sel, n_sel)
+    db_mat,         # shape (outer_batch, N, N)
+    selector,       # indices for selected matrix elements, shape (n_sel,)
+    z_weights,      # grid point weights, shape (inner_batch,)
+    pfad_output     # pre-allocated output array (outer_batch, inner_batch)
 )
-
 # Second derivative
 pfaffian_deriv_2(
-    matrices_c_inv, # shape (num_shadow, num_grid, n_sel, n_sel)
-    db_mat,         # shape (num_shadow, N, N)
-    selector,       # indices for matrix elements
-    z_weights,      # weights for grid points
-    pfad2_output    # pre-allocated output array (num_shadow, num_grid)
+    matrices_c_inv, # shape (outer_batch, inner_batch, n_sel, n_sel)
+    db_mat,         # shape (outer_batch, N, N)
+    selector,       # indices for selected matrix elements, shape (n_sel,)
+    z_weights,      # grid point weights, shape (inner_batch,)
+    pfad2_output    # pre-allocated output array (outer_batch, inner_batch)
 )
 ```
 
@@ -91,7 +89,7 @@ The derivatives are computed in-place, modifying the pre-allocated output arrays
 - Example code in `examples/`
 - Test suite in `tests/`
 - Run tests with `pytest tests` or by `cd`'ing into tests directory first
-- Performance benchmarking example in `examples/time_functions.py`
+- Performance benchmarking example in `examples/07-performance.py`
 
 ---
 
