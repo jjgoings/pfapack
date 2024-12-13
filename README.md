@@ -1,3 +1,102 @@
+# PFAPACK with Batched Pfaffian Computation
+[![Build and Test](https://github.com/jjgoings/pfapack/actions/workflows/main.yml/badge.svg)](https://github.com/jjgoings/pfapack/actions/workflows/main.yml)
+
+This fork of PFAPACK adds efficient batched computation capabilities for Pfaffians, including optional computation of matrix inverses and derivatives.
+
+The main reason for this fork was to eliminate needing to compute Pfaffians in Python loops 🙄
+
+## Quick Install
+
+```bash
+pip install -e .  # for development install
+# or
+pip install .     # for regular install
+```
+
+Required libraries:
+- BLAS
+- LAPACK 
+- A Fortran compiler (gfortran was tested)
+- A C compiler
+- Python 3.9+
+- NumPy
+- SciPy
+- Cython
+
+## Key Features Added in this Fork
+
+- Batched Pfaffian computation for 3D arrays (multiple matrices)
+- Batched Pfaffian computation for 4D arrays (multiple batches of matrices)
+- Optional computation of matrix inverses alongside Pfaffians
+- Support for Pfaffian derivatives
+- Performance benchmarking tools
+
+## Usage Examples
+
+### Basic Batched Computation
+```python
+from pfapack.ctypes import pfaffian_batched
+
+# For a batch of matrices shape (batch_size, N, N)
+pfaffians = pfaffian_batched(matrices)
+```
+
+### 4D Batched Computation
+```python
+from pfapack.ctypes import pfaffian_batched_4d
+
+# For matrices shape (outer_batch, inner_batch, N, N)
+pfaffians = pfaffian_batched_4d(matrices)
+```
+
+### With Inverse Computation
+```python
+from pfapack.ctypes import pfaffian_batched_4d_with_inverse
+
+# Returns both Pfaffians and inverses
+# inplace=True modifies input matrices to store inverses
+pfaffians, inverses = pfaffian_batched_4d_with_inverse(
+    matrices,
+    inplace=False  # Whether to modify input matrices for inverses
+)
+```
+
+### Pfaffian Derivatives
+```python
+from pfapack.ctypes import pfaffian_deriv_1, pfaffian_deriv_2
+# First derivative
+pfaffian_deriv_1(
+    matrices_c_inv, # shape (outer_batch, inner_batch, n_sel, n_sel)
+    db_mat,         # shape (outer_batch, N, N)
+    selector,       # indices for selected matrix elements, shape (n_sel,)
+    z_weights,      # grid point weights, shape (inner_batch,)
+    pfad_output     # pre-allocated output array (outer_batch, inner_batch)
+)
+# Second derivative
+pfaffian_deriv_2(
+    matrices_c_inv, # shape (outer_batch, inner_batch, n_sel, n_sel)
+    db_mat,         # shape (outer_batch, N, N)
+    selector,       # indices for selected matrix elements, shape (n_sel,)
+    z_weights,      # grid point weights, shape (inner_batch,)
+    pfad2_output    # pre-allocated output array (outer_batch, inner_batch)
+)
+```
+
+The derivatives are computed in-place, modifying the pre-allocated output arrays. Examples of usage can be found in `tests/test_pfaffian_deriv.py`.
+
+## Testing and Examples
+
+- Example code in `examples/`
+- Test suite in `tests/`
+- Run tests with `pytest tests` or by `cd`'ing into tests directory first
+- Performance benchmarking example in `examples/07-performance.py`
+
+---
+
+### *Original PFAPACK README follows*
+
+---
+
 # `pfapack`: Efficient numerical computation of the Pfaffian for dense and banded skew-symmetric matrices
 
 Code and algorithms are taken from [arXiv:1102.3440](https://arxiv.org/abs/1102.3440) which is authored by [Michael Wimmer](https://michaelwimmer.org/).
@@ -65,3 +164,4 @@ MIT License
 ## Contributions
 - Bas Nijholt
 - [Michael Wimmer (author of the algorithms)](https://arxiv.org/abs/1102.3440)
+
