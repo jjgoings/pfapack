@@ -93,7 +93,8 @@ def main():
                         error = abs(vals[0,0] - ref_val)
                     else:
                         continue
-                    print(f"Error {name} vs single: {error:.2e}")
+                    flag = "✅" if error < 1e-12 else "❌"
+                    print(f"  {flag} Error {name} vs single: {error:.2e}")
 
             # Additional validation for inverse computation
             if 'batched_4d_with_inverse' in pfaffian_values:
@@ -102,7 +103,8 @@ def main():
                 # Check A * A^(-1) = I for first matrix
                 prod = np.matmul(A[0, 0], invs[0, 0])
                 error = np.max(np.abs(prod - np.eye(N)))
-                print(f"Maximum deviation from identity for AA^(-1): {error:.2e}")
+                flag = "✅" if error < 1e-12 else "❌"
+                print(f"  {flag} Maximum deviation from identity for AA^(-1): {error:.2e}")
 
     # Print final statistics
     print("\nPerformance Statistics (in seconds):")
