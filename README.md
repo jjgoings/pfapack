@@ -1,4 +1,5 @@
 # PFAPACK with Batched Pfaffian Computation
+[![Build and Test](https://github.com/jjgoings/pfapack/actions/workflows/main.yml/badge.svg)](https://github.com/jjgoings/pfapack/actions/workflows/main.yml)
 
 This fork of PFAPACK adds efficient batched computation capabilities for Pfaffians, including optional computation of matrix inverses and derivatives.
 
