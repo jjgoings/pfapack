@@ -22,7 +22,7 @@ jobs:
     - name: Install GCC and GFortran
       run: |
         sudo apt-get update
-        sudo apt-get install -y gcc gfortran
+        sudo apt-get install -y build-essential gfortran liblapack-dev libblas-dev
 
     - name: Set compiler environment variables
       run: |
