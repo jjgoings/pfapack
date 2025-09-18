@@ -57,6 +57,25 @@ def _init_batched_4d(which, is_complex=False):
     ]
     return func
 
+
+def _init_batched_4d_fortran(which, is_complex=False):
+    """Initialize a batched 4D function that requires Fortran-contiguous buffers."""
+    func = getattr(lib, which)
+    func.restype = ctypes.c_int
+    dtype = np.complex128 if is_complex else np.float64
+    flags = "F_CONTIGUOUS"
+    func.argtypes = [
+        ctypes.c_int,                # outer_batch_size
+        ctypes.c_int,                # inner_batch_size
+        ctypes.c_int,                # N
+        ndpointer(dtype, flags=flags),
+        ndpointer(dtype, flags=flags),
+        ctypes.c_char_p,
+        ctypes.c_char_p,
+    ]
+    return func
+
+
 def _init_batched_4d_with_inverse(which, is_complex=False):
     """Initialize a batched 4D with inverse function."""
     func = getattr(lib, which)
@@ -73,6 +92,25 @@ def _init_batched_4d_with_inverse(which, is_complex=False):
         ctypes.c_char_p,             # MTHD
     ]
     return func
+
+
+def _init_batched_4d_with_inverse_fortran(which, is_complex=False):
+    func = getattr(lib, which)
+    func.restype = ctypes.c_int
+    dtype = np.complex128 if is_complex else np.float64
+    flags = "F_CONTIGUOUS"
+    func.argtypes = [
+        ctypes.c_int,
+        ctypes.c_int,
+        ctypes.c_int,
+        ndpointer(dtype, flags=flags),
+        ndpointer(dtype, flags=flags),
+        ndpointer(dtype, flags=flags),
+        ctypes.c_char_p,
+        ctypes.c_char_p,
+    ]
+    return func
+
 
 def _init_pfaffian_deriv(which):
     func = getattr(lib, which)
@@ -116,8 +154,12 @@ functions = {
     "skpfa_batched_z": _init_batched("skpfa_batched_z", is_complex=True),
     "skpfa_batched_4d_d": _init_batched_4d("skpfa_batched_4d_d"),
     "skpfa_batched_4d_z": _init_batched_4d("skpfa_batched_4d_z", is_complex=True),
+    "skpfa_batched_4d_d_f": _init_batched_4d_fortran("skpfa_batched_4d_d_f"),
+    "skpfa_batched_4d_z_f": _init_batched_4d_fortran("skpfa_batched_4d_z_f", is_complex=True),
     "skpfa_batched_4d_d_with_inverse": _init_batched_4d_with_inverse("skpfa_batched_4d_d_with_inverse"),
     "skpfa_batched_4d_z_with_inverse": _init_batched_4d_with_inverse("skpfa_batched_4d_z_with_inverse", is_complex=True),
+    "skpfa_batched_4d_d_with_inverse_f": _init_batched_4d_with_inverse_fortran("skpfa_batched_4d_d_with_inverse_f"),
+    "skpfa_batched_4d_z_with_inverse_f": _init_batched_4d_with_inverse_fortran("skpfa_batched_4d_z_with_inverse_f", is_complex=True),
     "pfaffian_deriv_1": _init_pfaffian_deriv("pfader_1"),
     "pfaffian_deriv_2": _init_pfaffian_deriv2("pfader_2")
 }
@@ -308,6 +350,70 @@ def pfaffian_batched_4d(matrices, uplo="U", method="P"):
     
     return result
 
+
+def pfaffian_batched_4d_fortran(matrices, uplo="U", method="P"):
+    """Compute Pfaffians for data already organised in a Fortran-friendly layout.
+
+    Parameters
+    ----------
+    matrices : numpy.ndarray
+        Either the standard layout ``(outer, inner, N, N)`` or a pre-arranged
+        Fortran layout ``(N, N, outer, inner)`` with ``order='F'``.
+    """
+
+    if matrices.ndim != 4:
+        raise ValueError("Input must be a 4D array")
+
+    reorder_needed = False
+
+    if matrices.shape[-1] == matrices.shape[-2]:
+        outer_batch_size, inner_batch_size, N, M = matrices.shape
+        if M != N:
+            raise ValueError("Last two dimensions must be square (N x N)")
+        reorder_needed = True
+    else:
+        N, M, outer_batch_size, inner_batch_size = matrices.shape
+        if N != M:
+            raise ValueError("Leading dimensions must describe square matrices")
+        reorder_needed = False
+
+    if np.iscomplexobj(matrices):
+        dtype = np.complex128
+        func = functions["skpfa_batched_4d_z_f"]
+    else:
+        dtype = np.float64
+        func = functions["skpfa_batched_4d_d_f"]
+
+    if matrices.dtype != dtype:
+        matrices = np.asarray(matrices, dtype=dtype)
+
+    if reorder_needed:
+        axes = (2, 3, 0, 1)
+        matrices_f = np.asfortranarray(np.transpose(matrices, axes))
+    else:
+        if not matrices.flags["F_CONTIGUOUS"]:
+            matrices_f = np.asfortranarray(matrices)
+        else:
+            matrices_f = matrices
+
+    result = np.empty((outer_batch_size, inner_batch_size), dtype=dtype, order="F")
+
+    success = func(
+        outer_batch_size,
+        inner_batch_size,
+        N,
+        matrices_f,
+        result,
+        uplo.encode(),
+        method.encode(),
+    )
+
+    if success != 0:
+        raise RuntimeError(f"Pfaffian computation failed with error code {success}")
+
+    return result
+
+
 def pfaffian_batched_4d_with_inverse(matrices, *, uplo="U", method="P", inplace=False):
     """
     Compute Pfaffians and inverses for a batch of real or complex matrices.
@@ -378,6 +484,81 @@ def pfaffian_batched_4d_with_inverse(matrices, *, uplo="U", method="P", inplace=
         raise RuntimeError(f"PFAPACK returned error code {success}")
 
     return pfaffians, inverses
+
+
+def pfaffian_batched_4d_with_inverse_fortran(
+    matrices,
+    *,
+    uplo="U",
+    method="P",
+    inplace=False,
+):
+    """Fortran-layout variant of :func:`pfaffian_batched_4d_with_inverse`."""
+
+    if matrices.ndim != 4:
+        raise ValueError("Input must be a 4D array")
+
+    if matrices.shape[-1] == matrices.shape[-2]:
+        outer_batch_size, inner_batch_size, N, M = matrices.shape
+        if M != N:
+            raise ValueError("Last two dimensions must be square (N x N)")
+        reorder_needed = True
+    else:
+        N, M, outer_batch_size, inner_batch_size = matrices.shape
+        if N != M:
+            raise ValueError("Leading dimensions must describe square matrices")
+        reorder_needed = False
+
+    if np.iscomplexobj(matrices):
+        dtype = np.complex128
+        func = functions["skpfa_batched_4d_z_with_inverse_f"]
+    else:
+        dtype = np.float64
+        func = functions["skpfa_batched_4d_d_with_inverse_f"]
+
+    if matrices.dtype != dtype:
+        matrices = np.asarray(matrices, dtype=dtype)
+
+    if reorder_needed:
+        if inplace:
+            raise ValueError("inplace=True requires Fortran layout input")
+        matrices_f = np.asfortranarray(np.transpose(matrices, (2, 3, 0, 1)))
+    else:
+        if not matrices.flags["F_CONTIGUOUS"]:
+            if inplace:
+                raise ValueError("inplace=True requires Fortran-contiguous input")
+            matrices_f = np.asfortranarray(matrices)
+        else:
+            matrices_f = matrices
+
+    if inplace:
+        matrices_work = matrices_f
+    else:
+        matrices_work = matrices_f.copy(order="F")
+
+    pfaffians = np.empty((outer_batch_size, inner_batch_size), dtype=dtype, order="F")
+    inverses_buf = matrices_work if inplace else np.empty_like(matrices_work, order="F")
+
+    success = func(
+        outer_batch_size,
+        inner_batch_size,
+        N,
+        matrices_work,
+        pfaffians,
+        inverses_buf,
+        uplo.encode(),
+        method.encode(),
+    )
+
+    if success != 0:
+        raise RuntimeError(f"PFAPACK returned error code {success}")
+
+    if reorder_needed:
+        inverses_out = np.transpose(inverses_buf, (2, 3, 0, 1)).copy(order="C")
+    else:
+        inverses_out = inverses_buf if inplace else inverses_buf.copy(order="F")
+
+    return np.array(pfaffians, copy=False), inverses_out
 
 def pfaffian_deriv_1(matrices_c_inv, db_mat, s, zs, pfaffian_deriv):
     num_shadow, num_grid_points, n_sel, _ = matrices_c_inv.shape

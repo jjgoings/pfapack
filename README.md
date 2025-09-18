@@ -89,6 +89,7 @@ The derivatives are computed in-place, modifying the pre-allocated output arrays
 - Example code in `examples/`
 - Test suite in `tests/`
 - Run tests with `pytest tests` or by `cd`'ing into tests directory first
+- Enable per-test profiling by exporting `PFAPACK_PROFILE_TESTS=1` (or passing `--pfapack-profile-tests`) to write `.prof` files under `artifacts/profile/`
 - Performance benchmarking example in `examples/07-performance.py`
 
 ---
@@ -164,4 +165,3 @@ MIT License
 ## Contributions
 - Bas Nijholt
 - [Michael Wimmer (author of the algorithms)](https://arxiv.org/abs/1102.3440)
-
