@@ -11,7 +11,9 @@ from pfapack import pfaffian as pf  # noqa isort:skip
 from pfapack.ctypes import pfaffian
 from pfapack.ctypes import pfaffian_batched
 from pfapack.ctypes import pfaffian_batched_4d
+from pfapack.ctypes import pfaffian_batched_4d_fortran
 from pfapack.ctypes import pfaffian_batched_4d_with_inverse
+from pfapack.ctypes import pfaffian_batched_4d_with_inverse_fortran
 
 
 EPS = 1e-11
@@ -191,6 +193,31 @@ def test_batched_4d_vs_individual():
 
         np.testing.assert_allclose(pfaffians_batched_complex, pfaffians_individual_complex, rtol=EPS, atol=EPS)
 
+
+@pytest.mark.parametrize("dtype", [np.float64, np.complex128])
+def test_batched_4d_fortran_matches_standard(dtype):
+    rng = np.random.default_rng(1234)
+    outer_batch_size, inner_batch_size, matrix_size = 5, 3, 6
+
+    base = rng.standard_normal((outer_batch_size, inner_batch_size, matrix_size, matrix_size))
+    if dtype is np.complex128:
+        base = base + 1j * rng.standard_normal(base.shape)
+
+    base = base - np.transpose(base, (0, 1, 3, 2))
+    matrices = base.astype(dtype, copy=False)
+
+    matrices_fortran = np.zeros((matrix_size, matrix_size, outer_batch_size, inner_batch_size), dtype=dtype, order="F")
+    for o in range(outer_batch_size):
+        for i in range(inner_batch_size):
+            matrices_fortran[:, :, o, i] = matrices[o, i]
+
+    standard = pfaffian_batched_4d(matrices)
+    fortran = pfaffian_batched_4d_fortran(matrices_fortran)
+
+    np.testing.assert_allclose(fortran, standard, rtol=EPS, atol=EPS)
+    assert fortran.flags["F_CONTIGUOUS"]
+
+
 def test_known_values_4d():
     # Define a small 4D array with known Pfaffians
     real_matrix = np.array([
@@ -327,6 +354,40 @@ def test_pfaffian_batched_4d_with_inverse_complex():
                 det = np.linalg.det(original_matrix)
                 pf_squared = pfaff1[i, j] ** 2
                 assert np.allclose(pf_squared, det, atol=atol, rtol=rtol)
+
+
+@pytest.mark.parametrize("dtype", [np.float64, np.complex128])
+def test_batched_4d_with_inverse_fortran_matches(dtype):
+    rng = np.random.default_rng(2024)
+    outer_batch, inner_batch, N = 4, 3, 6
+
+    base = rng.standard_normal((outer_batch, inner_batch, N, N))
+    if dtype is np.complex128:
+        base = base + 1j * rng.standard_normal(base.shape)
+
+    base = base - np.transpose(base, (0, 1, 3, 2))
+    matrices_standard = base.astype(dtype, copy=True)
+
+    matrices_fortran = np.zeros((N, N, outer_batch, inner_batch), dtype=dtype, order="F")
+    for o in range(outer_batch):
+        for i in range(inner_batch):
+            matrices_fortran[:, :, o, i] = matrices_standard[o, i]
+
+    pf_std, inv_std = pfaffian_batched_4d_with_inverse(matrices_standard.copy(), inplace=False)
+    pf_f, inv_f = pfaffian_batched_4d_with_inverse_fortran(matrices_fortran.copy(order="F"), inplace=False)
+
+    np.testing.assert_allclose(pf_f, pf_std, rtol=EPS, atol=EPS)
+    inv_f_standard = np.transpose(inv_f, (2, 3, 0, 1))
+    np.testing.assert_allclose(inv_f_standard, inv_std, rtol=1e-9, atol=1e-9)
+    assert inv_f.flags["F_CONTIGUOUS"]
+
+    matrices_fortran_inplace = matrices_fortran.copy(order="F")
+    pf_inplace, inv_inplace = pfaffian_batched_4d_with_inverse_fortran(
+        matrices_fortran_inplace, inplace=True
+    )
+    np.testing.assert_allclose(pf_inplace, pf_std, rtol=EPS, atol=EPS)
+    assert inv_inplace is matrices_fortran_inplace
+
 
 def test_error_handling():
     """Test error handling for both real and complex versions"""
