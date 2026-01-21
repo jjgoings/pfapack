@@ -7,8 +7,8 @@ from setuptools import find_packages, setup, Command
 from setuptools.command.build_py import build_py
 from setuptools.command.build_ext import build_ext
 
-if sys.version_info < (3, 9):
-    print("pfapack requires Python 3.9 or above.")
+if sys.version_info < (3, 10):
+    print("pfapack requires Python 3.10 or above.")
     sys.exit(1)
 
 with open("README.md") as f:
@@ -59,7 +59,7 @@ class CustomCleanCommand(Command):
 
 setup(
     name="pfapack",
-    python_requires=">=3.9",
+    python_requires=">=3.10",
     version="0.0.1",
     cmdclass={
         'build_ext': CustomBuildExtCommand,
@@ -70,9 +70,11 @@ setup(
         "Intended Audience :: Science/Research",
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Topic :: Scientific/Engineering",
         "License :: OSI Approved :: MIT License",
-        "Programming Language :: Python :: 3.9",
     ],
     description="Efficient numerical computation of the Pfaffian for dense and banded skew-symmetric matrices.",
     long_description=readme,
