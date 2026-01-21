@@ -11,6 +11,52 @@
 extern "C" {
 #endif
 
+static inline void pfapack_gather_db_mat_sel(
+    doublecmplx *db_mat_sel,
+    const doublecmplx *db_mat_shadow,
+    const int *selector,
+    int n_sel,
+    int n_full
+) {
+    for (int i = 0; i < n_sel; i++) {
+        const doublecmplx *db_mat_row = db_mat_shadow + (size_t)selector[i] * (size_t)n_full;
+        doublecmplx *db_mat_sel_row = db_mat_sel + (size_t)i * (size_t)n_sel;
+        for (int j = 0; j < n_sel; j++) {
+            db_mat_sel_row[j] = db_mat_row[selector[j]];
+        }
+    }
+}
+
+static inline doublecmplx pfapack_trace_xxt(
+    const doublecmplx *x_rowmajor,
+    int n_sel
+) {
+    // Compute sum_{i,j} X[i,j] * X[j,i] (no conjugation).
+    // This preserves the original loop order and is friendly to
+    // pointer-based striding and compiler unrolling.
+    doublecmplx res = 0.0;
+    for (int im = 0; im < n_sel; im++) {
+        const doublecmplx *row = x_rowmajor + (size_t)im * (size_t)n_sel;
+        const doublecmplx *colp = x_rowmajor + im;
+        int in = 0;
+        for (; in + 3 < n_sel; in += 4) {
+            res += row[in] * (*colp);
+            colp += n_sel;
+            res += row[in + 1] * (*colp);
+            colp += n_sel;
+            res += row[in + 2] * (*colp);
+            colp += n_sel;
+            res += row[in + 3] * (*colp);
+            colp += n_sel;
+        }
+        for (; in < n_sel; in++) {
+            res += row[in] * (*colp);
+            colp += n_sel;
+        }
+    }
+    return res;
+}
+
 
 int pfader_1(int n_sh,
              int n_grid, double *weights,
@@ -31,15 +77,10 @@ int pfader_1(int n_sh,
     int m = matrix_size, n = n_grid, inc = 1;
 
     for (int ii = 0; ii < n_sh; ii++) {
-        for (int i = 0; i < n_sel; i++) {
-            doublecmplx *db_mat_i = db_mat + ii * N * N + selector[i] * N;
-            doublecmplx *db_mat_sel_i = db_mat_sel + i * n_sel;
-            for (int j = 0; j < n_sel; j++) {
-                db_mat_sel_i[j] = db_mat_i[selector[j]];
-            }
-        }
-        doublecmplx *c_inv_i = matrices_c_inv + matrix_size * n_grid * ii;
-        doublecmplx *pfaffian_deriv_i = pfaffian_deriv + n_grid * ii;
+        const doublecmplx *db_mat_shadow = db_mat + (size_t)ii * (size_t)N * (size_t)N;
+        pfapack_gather_db_mat_sel(db_mat_sel, db_mat_shadow, selector, n_sel, N);
+        doublecmplx *c_inv_i = matrices_c_inv + matrix_size * (size_t)n_grid * (size_t)ii;
+        doublecmplx *pfaffian_deriv_i = pfaffian_deriv + (size_t)n_grid * (size_t)ii;
         zgemv_(&trans, &m, &n, &alpha, c_inv_i, &m, db_mat_sel, &inc, &beta, pfaffian_deriv_i, &inc);
         for (int jj = 0; jj < n_grid; jj++) {
             pfaffian_deriv_i[jj] *= weights[jj];
@@ -66,35 +107,25 @@ int pfader_2(int n_sh,
         return -100;
 
     void *buffer2 = NULL;
-    if (posix_memalign(&buffer2, 64, matrix_size * sizeof(doublecmplx)) != 0)
+    if (posix_memalign(&buffer2, 64, matrix_size * sizeof(doublecmplx)) != 0) {
+        free(buffer);
         return -100;
+    }
 
     doublecmplx *db_mat_sel = (doublecmplx*)buffer;
     doublecmplx *c_inv_times_db_mat_sel = (doublecmplx*)buffer2;
     doublecmplx alpha = 1, beta = 0;
-    int m = matrix_size, n = n_grid, inc = 1;
 
     for (int ii = 0; ii < n_sh; ii++) {
-        for (int i = 0; i < n_sel; i++) {
-            doublecmplx *db_mat_i = db_mat + ii * N * N + selector[i] * N;
-            doublecmplx *db_mat_sel_i = db_mat_sel + i * n_sel;
-            for (int j = 0; j < n_sel; j++) {
-                db_mat_sel_i[j] = db_mat_i[selector[j]];      
-            }
-        }
-        doublecmplx *pfaffian_deriv2_i = pfaffian_deriv2 + n_grid * ii; 
-        // compute c_inv * db_mat_sel, and overwrite c_inv
+        const doublecmplx *db_mat_shadow = db_mat + (size_t)ii * (size_t)N * (size_t)N;
+        pfapack_gather_db_mat_sel(db_mat_sel, db_mat_shadow, selector, n_sel, N);
+        doublecmplx *pfaffian_deriv2_i = pfaffian_deriv2 + (size_t)n_grid * (size_t)ii;
         for (int jj = 0; jj < n_grid; jj++) {
-            doublecmplx *c_inv_i = matrices_c_inv + matrix_size * (n_grid * ii + jj);
+            doublecmplx *c_inv_i = matrices_c_inv + matrix_size * ((size_t)n_grid * (size_t)ii + (size_t)jj);
             zgemm_(&trans, &trans, &n_sel, &n_sel, &n_sel, &alpha, c_inv_i, &n_sel, db_mat_sel, &n_sel, &beta, c_inv_times_db_mat_sel, &n_sel);
-            // trace
-            doublecmplx res = 0.0; 
-            for (int im = 0; im < n_sel; im++){
-                for (int in = 0; in < n_sel; in++){
-                    res += (c_inv_times_db_mat_sel[im*n_sel+in] * c_inv_times_db_mat_sel[in*n_sel+im]);
-                }
-            }
-            pfaffian_deriv2_i[jj] = res * (weights[jj] * weights[jj]);
+            doublecmplx res = pfapack_trace_xxt(c_inv_times_db_mat_sel, n_sel);
+            const double w = weights[jj];
+            pfaffian_deriv2_i[jj] = res * (w * w);
         }
     }
 
