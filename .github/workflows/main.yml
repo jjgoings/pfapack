@@ -109,14 +109,14 @@ jobs:
       run: |
         python bench/phase2_bench.py tomography \
           --iters 5 --warmup 2 \
-          --nshadow 64 --ngrid 9 --n-sel 16 --n-full 32 \
+          --nshadow 128 --ngrid 17 --n-sel 32 --n-full 64 \
           --json-out benchmark-tomography.json
 
     - name: Run phase2 benchmark (many-small)
       run: |
         python bench/phase2_bench.py many-small \
           --iters 5 --warmup 2 \
-          --outer 8192 --inner 5 --n 8 \
+          --outer 65536 --inner 5 --n 8 \
           --json-out benchmark-many-small.json
 
     - name: Convert benchmarks to unified format
@@ -253,11 +253,11 @@ jobs:
       run: |
         python bench/phase2_bench.py tomography \
           --iters 3 --warmup 1 \
-          --nshadow 64 --ngrid 9 --n-sel 16 --n-full 32 \
+          --nshadow 128 --ngrid 17 --n-sel 32 --n-full 64 \
           --json-out benchmark-tomography.json
         python bench/phase2_bench.py many-small \
           --iters 3 --warmup 1 \
-          --outer 8192 --inner 5 --n 8 \
+          --outer 65536 --inner 5 --n 8 \
           --json-out benchmark-many-small.json
 
     - name: Report benchmark summary
