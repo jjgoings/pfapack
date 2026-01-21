@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1769031563182,
+  "lastUpdate": 1769032345185,
   "repoUrl": "https://github.com/jjgoings/pfapack",
   "entries": {
     "PFAPACK Performance (macos-latest)": [
@@ -198,6 +198,72 @@ window.BENCHMARK_DATA = {
             "range": "± 0.000567",
             "unit": "s",
             "extra": "outer=8192 n=8"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "3915169+jjgoings@users.noreply.github.com",
+            "name": "jjgoings",
+            "username": "jjgoings"
+          },
+          "committer": {
+            "email": "3915169+jjgoings@users.noreply.github.com",
+            "name": "jjgoings",
+            "username": "jjgoings"
+          },
+          "distinct": true,
+          "id": "a5ed4c943e0fe689b4314182e45081301160d406",
+          "message": "Increase CI benchmark problem sizes for more representative performance measurements",
+          "timestamp": "2026-01-21T13:49:12-08:00",
+          "tree_id": "996c8136d0329bb55a25070ffbd94fe5228360a2",
+          "url": "https://github.com/jjgoings/pfapack/commit/a5ed4c943e0fe689b4314182e45081301160d406"
+        },
+        "date": 1769032343674,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "python_loop",
+            "value": 0.0026213369285700444,
+            "range": "± 0.001665",
+            "unit": "s",
+            "extra": "min=0.001633 max=0.013309"
+          },
+          {
+            "name": "c_loop",
+            "value": 0.00028011671585903466,
+            "range": "± 0.000516",
+            "unit": "s",
+            "extra": "min=0.000229 max=0.011211"
+          },
+          {
+            "name": "batched_3d",
+            "value": 0.00004481147214156439,
+            "range": "± 0.000026",
+            "unit": "s",
+            "extra": "min=0.000038 max=0.000794"
+          },
+          {
+            "name": "batched_4d",
+            "value": 0.000014641229802024375,
+            "range": "± 0.000009",
+            "unit": "s",
+            "extra": "min=0.000013 max=0.000304"
+          },
+          {
+            "name": "phase2_tomography",
+            "value": 0.1175728250000077,
+            "range": "± 0.014857",
+            "unit": "s",
+            "extra": "n_sel=32"
+          },
+          {
+            "name": "phase2_many_small",
+            "value": 0.11251970860000142,
+            "range": "± 0.005697",
+            "unit": "s",
+            "extra": "outer=65536 n=8"
           }
         ]
       }
