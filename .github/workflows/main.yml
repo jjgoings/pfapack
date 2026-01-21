@@ -70,6 +70,9 @@ jobs:
       if: runner.os == 'macOS'
       run: |
         brew install gcc
+        # Create symlinks so 'gfortran' and 'gcc' work (Makefiles use these names)
+        sudo ln -sf $(which gfortran-14) /usr/local/bin/gfortran
+        sudo ln -sf $(which gcc-14) /usr/local/bin/gcc
 
     - name: Set compiler and threading environment
       run: |
@@ -211,6 +214,9 @@ jobs:
       if: runner.os == 'macOS'
       run: |
         brew install gcc
+        # Create symlinks so 'gfortran' and 'gcc' work (Makefiles use these names)
+        sudo ln -sf $(which gfortran-14) /usr/local/bin/gfortran
+        sudo ln -sf $(which gcc-14) /usr/local/bin/gcc
 
     - name: Set compiler and threading environment
       run: |
