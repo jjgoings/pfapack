@@ -12,14 +12,14 @@ jobs:
         python-version: ['3.9', '3.10', '3.11', '3.12']
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Install GCC and GFortran
+    - name: Install system dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y build-essential gfortran liblapack-dev libblas-dev
@@ -29,7 +29,7 @@ jobs:
         echo "CC=gcc" >> $GITHUB_ENV
         echo "FC=gfortran" >> $GITHUB_ENV
 
-    - name: Install dependencies
+    - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
@@ -38,15 +38,254 @@ jobs:
     - name: Install package
       run: pip install .
 
-    - name: Build C/FORTRAN extensions
+    - name: Build C/Fortran extensions
       run: python setup.py build_ext --inplace
 
     - name: Run tests
       run: pytest -v tests
 
-    - name: Upload test results
+  benchmark:
+    runs-on: ${{ matrix.os }}
+    needs: build_and_test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install system dependencies (Ubuntu)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential gfortran liblapack-dev libblas-dev
+
+    - name: Install system dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        brew install gcc
+
+    - name: Set compiler and threading environment
+      run: |
+        echo "OMP_NUM_THREADS=1" >> $GITHUB_ENV
+        echo "OPENBLAS_NUM_THREADS=1" >> $GITHUB_ENV
+        echo "VECLIB_MAXIMUM_THREADS=1" >> $GITHUB_ENV
+        if [ "$RUNNER_OS" == "Linux" ]; then
+          echo "CC=gcc" >> $GITHUB_ENV
+          echo "FC=gfortran" >> $GITHUB_ENV
+        else
+          echo "CC=gcc-14" >> $GITHUB_ENV
+          echo "FC=gfortran-14" >> $GITHUB_ENV
+        fi
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-benchmark
+
+    - name: Install package
+      run: pip install .
+
+    - name: Build C/Fortran extensions
+      run: python setup.py build_ext --inplace
+
+    - name: Run pytest benchmarks
+      run: |
+        pytest tests/test_performance_timings.py \
+          --benchmark-json=benchmark-pytest.json \
+          --benchmark-min-rounds=5
+
+    - name: Run phase2 benchmark (tomography)
+      run: |
+        python bench/phase2_bench.py tomography \
+          --iters 5 --warmup 2 \
+          --nshadow 64 --ngrid 9 --n-sel 16 --n-full 32 \
+          --json-out benchmark-tomography.json
+
+    - name: Run phase2 benchmark (many-small)
+      run: |
+        python bench/phase2_bench.py many-small \
+          --iters 5 --warmup 2 \
+          --outer 8192 --inner 5 --n 8 \
+          --json-out benchmark-many-small.json
+
+    - name: Convert benchmarks to unified format
+      run: |
+        python -c "
+        import json
+        from pathlib import Path
+
+        results = []
+
+        # pytest-benchmark results
+        pb = json.loads(Path('benchmark-pytest.json').read_text())
+        for bench in pb.get('benchmarks', []):
+            results.append({
+                'name': bench['name'],
+                'unit': 's',
+                'value': bench['stats']['mean'],
+                'range': f\"± {bench['stats']['stddev']:.6f}\",
+                'extra': f\"min={bench['stats']['min']:.6f} max={bench['stats']['max']:.6f}\"
+            })
+
+        # phase2 tomography
+        tomo = json.loads(Path('benchmark-tomography.json').read_text())
+        for run in tomo.get('runs', []):
+            results.append({
+                'name': f\"phase2_{run['meta']['workload']}\",
+                'unit': 's',
+                'value': run['stats']['mean'],
+                'range': f\"± {run['stats']['stdev']:.6f}\",
+                'extra': f\"n_sel={run['meta'].get('n_sel', 'N/A')}\"
+            })
+
+        # phase2 many-small
+        small = json.loads(Path('benchmark-many-small.json').read_text())
+        for run in small.get('runs', []):
+            results.append({
+                'name': f\"phase2_{run['meta']['workload']}\",
+                'unit': 's',
+                'value': run['stats']['mean'],
+                'range': f\"± {run['stats']['stdev']:.6f}\",
+                'extra': f\"outer={run['meta'].get('outer', 'N/A')} n={run['meta'].get('n', 'N/A')}\"
+            })
+
+        Path('benchmark-results.json').write_text(json.dumps(results, indent=2))
+        print(json.dumps(results, indent=2))
+        "
+
+    - name: Store benchmark results
+      uses: benchmark-action/github-action-benchmark@v1
+      with:
+        name: PFAPACK Performance (${{ matrix.os }})
+        tool: 'customSmallerIsBetter'
+        output-file-path: benchmark-results.json
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        auto-push: true
+        alert-threshold: '150%'
+        comment-on-alert: true
+        fail-on-alert: false
+        gh-pages-branch: gh-pages
+        benchmark-data-dir-path: dev/bench/${{ matrix.os }}
+
+    - name: Upload benchmark artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: pytest-results-${{ matrix.os }}-${{ matrix.python-version }}
-        path: pytest-results.xml
-      if: always()
+        name: benchmark-results-${{ matrix.os }}
+        path: |
+          benchmark-pytest.json
+          benchmark-tomography.json
+          benchmark-many-small.json
+          benchmark-results.json
+
+  benchmark_pr:
+    runs-on: ${{ matrix.os }}
+    needs: build_and_test
+    if: github.event_name == 'pull_request'
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install system dependencies (Ubuntu)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential gfortran liblapack-dev libblas-dev
+
+    - name: Install system dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        brew install gcc
+
+    - name: Set compiler and threading environment
+      run: |
+        echo "OMP_NUM_THREADS=1" >> $GITHUB_ENV
+        echo "OPENBLAS_NUM_THREADS=1" >> $GITHUB_ENV
+        echo "VECLIB_MAXIMUM_THREADS=1" >> $GITHUB_ENV
+        if [ "$RUNNER_OS" == "Linux" ]; then
+          echo "CC=gcc" >> $GITHUB_ENV
+          echo "FC=gfortran" >> $GITHUB_ENV
+        else
+          echo "CC=gcc-14" >> $GITHUB_ENV
+          echo "FC=gfortran-14" >> $GITHUB_ENV
+        fi
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-benchmark
+
+    - name: Install package
+      run: pip install .
+
+    - name: Build C/Fortran extensions
+      run: python setup.py build_ext --inplace
+
+    - name: Run pytest benchmarks
+      run: |
+        pytest tests/test_performance_timings.py \
+          --benchmark-json=benchmark-pytest.json \
+          --benchmark-min-rounds=5
+
+    - name: Run phase2 benchmarks
+      run: |
+        python bench/phase2_bench.py tomography \
+          --iters 3 --warmup 1 \
+          --nshadow 64 --ngrid 9 --n-sel 16 --n-full 32 \
+          --json-out benchmark-tomography.json
+        python bench/phase2_bench.py many-small \
+          --iters 3 --warmup 1 \
+          --outer 8192 --inner 5 --n 8 \
+          --json-out benchmark-many-small.json
+
+    - name: Report benchmark summary
+      run: |
+        echo "## Benchmark Results (${{ matrix.os }})" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        python -c "
+        import json
+        from pathlib import Path
+
+        print('### pytest-benchmark')
+        pb = json.loads(Path('benchmark-pytest.json').read_text())
+        print('| Test | Mean | StdDev |')
+        print('|------|------|--------|')
+        for b in pb.get('benchmarks', []):
+            name = b['name'].split('[')[0]
+            print(f\"| {name} | {b['stats']['mean']*1000:.3f} ms | {b['stats']['stddev']*1000:.3f} ms |\")
+
+        print()
+        print('### phase2 benchmarks')
+        print('| Workload | Mean | StdDev |')
+        print('|----------|------|--------|')
+        for f in ['benchmark-tomography.json', 'benchmark-many-small.json']:
+            data = json.loads(Path(f).read_text())
+            for run in data.get('runs', []):
+                wl = run['meta']['workload']
+                print(f\"| {wl} | {run['stats']['mean']*1000:.3f} ms | {run['stats']['stdev']*1000:.3f} ms |\")
+        " >> $GITHUB_STEP_SUMMARY
+
+    - name: Upload benchmark artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: benchmark-results-pr-${{ matrix.os }}
+        path: |
+          benchmark-pytest.json
+          benchmark-tomography.json
+          benchmark-many-small.json
