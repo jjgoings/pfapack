@@ -73,8 +73,16 @@ jobs:
     - name: Save benchmark scripts (for historical benchmarks)
       if: github.event.inputs.benchmark_ref != ''
       run: |
-        mkdir -p /tmp/bench-scripts
-        cp -r bench/ /tmp/bench-scripts/ 2>/dev/null || true
+        # Use RUNNER_TEMP which is guaranteed to persist across steps (macOS /tmp can be unreliable)
+        BENCH_BACKUP="${RUNNER_TEMP}/bench-scripts-backup"
+        mkdir -p "$BENCH_BACKUP"
+        if [ -d bench ]; then
+          cp -a bench/ "$BENCH_BACKUP/"
+          echo "Saved bench/ to $BENCH_BACKUP/bench/"
+          ls -la "$BENCH_BACKUP/bench/"
+        else
+          echo "WARNING: bench/ directory not found on main branch"
+        fi
 
     - name: Checkout specific commit (for historical benchmarks)
       if: github.event.inputs.benchmark_ref != ''
@@ -83,8 +91,15 @@ jobs:
     - name: Restore benchmark scripts (for historical benchmarks)
       if: github.event.inputs.benchmark_ref != ''
       run: |
+        BENCH_BACKUP="${RUNNER_TEMP}/bench-scripts-backup"
         mkdir -p bench
-        cp -r /tmp/bench-scripts/bench/* bench/ 2>/dev/null || true
+        if [ -d "$BENCH_BACKUP/bench" ]; then
+          cp -a "$BENCH_BACKUP/bench"/* bench/
+          echo "Restored bench/ from $BENCH_BACKUP/bench/"
+          ls -la bench/
+        else
+          echo "WARNING: No backup found at $BENCH_BACKUP/bench/"
+        fi
 
     - name: Set up Python
       uses: actions/setup-python@v5
