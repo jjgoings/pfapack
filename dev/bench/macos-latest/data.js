@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1769106393165,
+  "lastUpdate": 1769106423600,
   "repoUrl": "https://github.com/jjgoings/pfapack",
   "entries": {
     "PFAPACK Performance (macos-latest)": [
@@ -392,6 +392,56 @@ window.BENCHMARK_DATA = {
             "range": "± 0.000005",
             "unit": "s",
             "extra": "min=0.000037 max=0.000083"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "3915169+jjgoings@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "3915169+jjgoings@users.noreply.github.com"
+          },
+          "id": "0825d76f7b87c61a84cb00f726782b317df8063b",
+          "message": "Optimize Parlett-Reid factorization: fused division, internal BLAS-1 kernels, batched row swaps",
+          "timestamp": "2026-01-22T05:43:03Z",
+          "url": "https://github.com/jjgoings/pfapack/commit/0825d76f7b87c61a84cb00f726782b317df8063b"
+        },
+        "date": 1769106422398,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "c_loop",
+            "value": 0.00018106583001440413,
+            "range": "± 0.000131",
+            "unit": "s",
+            "extra": "min=0.000130 max=0.001002"
+          },
+          {
+            "name": "batched_4d",
+            "value": 0.00001992000999962329,
+            "range": "± 0.000003",
+            "unit": "s",
+            "extra": "min=0.000019 max=0.000037"
+          },
+          {
+            "name": "phase2_tomography",
+            "value": 0.10577020020002692,
+            "range": "± 0.008110",
+            "unit": "s",
+            "extra": "n_sel=32"
+          },
+          {
+            "name": "phase2_many_small",
+            "value": 0.09410526659996776,
+            "range": "± 0.005158",
+            "unit": "s",
+            "extra": "outer=65536 n=8"
           }
         ]
       }
