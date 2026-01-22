@@ -6,6 +6,250 @@ window.BENCHMARK_DATA = {
       {
         "commit": {
           "author": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "jjgoings@gmail.com"
+          },
+          "committer": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "jjgoings@gmail.com"
+          },
+          "id": "61ae64e6ab7ac7490ddc3e54d9bbc50ee9ec04a7",
+          "message": "superbatching",
+          "timestamp": "2024-07-31T22:44:29Z",
+          "url": "https://github.com/jjgoings/pfapack/commit/61ae64e6ab7ac7490ddc3e54d9bbc50ee9ec04a7"
+        },
+        "date": 1769106372357,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "c_loop",
+            "value": 0.00037324376000000823,
+            "range": "\u00b1 0.000161",
+            "unit": "s",
+            "extra": "min=0.000258 max=0.000851"
+          },
+          {
+            "name": "batched_4d",
+            "value": 7.029716999980451e-05,
+            "range": "\u00b1 0.000013",
+            "unit": "s",
+            "extra": "min=0.000064 max=0.000145"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "jjgoings@gmail.com"
+          },
+          "committer": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "jjgoings@gmail.com"
+          },
+          "id": "0761f01bb615a85b46895d14417e9dfdee838bc4",
+          "message": "everything is c-contig",
+          "timestamp": "2024-10-31T22:00:19Z",
+          "url": "https://github.com/jjgoings/pfapack/commit/0761f01bb615a85b46895d14417e9dfdee838bc4"
+        },
+        "date": 1769106368745,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "c_loop",
+            "value": 0.00023474508000006722,
+            "range": "\u00b1 0.000027",
+            "unit": "s",
+            "extra": "min=0.000223 max=0.000420"
+          },
+          {
+            "name": "batched_4d",
+            "value": 5.6250519999707646e-05,
+            "range": "\u00b1 0.00001",
+            "unit": "s",
+            "extra": "min=0.000052 max=0.000116"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "jjgoings@gmail.com"
+          },
+          "committer": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "jjgoings@gmail.com"
+          },
+          "id": "a028f71f3aca3907d0a2421d4929f13f9596b43d",
+          "message": "work with complex128 in interleaved fashion",
+          "timestamp": "2024-11-23T00:23:03Z",
+          "url": "https://github.com/jjgoings/pfapack/commit/a028f71f3aca3907d0a2421d4929f13f9596b43d"
+        },
+        "date": 1769106378268,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "c_loop",
+            "value": 0.00029028470000014295,
+            "range": "\u00b1 0.000031",
+            "unit": "s",
+            "extra": "min=0.000257 max=0.000500"
+          },
+          {
+            "name": "batched_4d",
+            "value": 6.725222000255826e-05,
+            "range": "\u00b1 0.000008",
+            "unit": "s",
+            "extra": "min=0.000063 max=0.000123"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "jjgoings@gmail.com"
+          },
+          "committer": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "jjgoings@gmail.com"
+          },
+          "id": "7d310f121649f62c253bc07b9632cbd8492ec513",
+          "message": "single alloc",
+          "timestamp": "2024-11-26T19:40:52Z",
+          "url": "https://github.com/jjgoings/pfapack/commit/7d310f121649f62c253bc07b9632cbd8492ec513"
+        },
+        "date": 1769106374472,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "c_loop",
+            "value": 0.00030838036999881525,
+            "range": "\u00b1 0.000085",
+            "unit": "s",
+            "extra": "min=0.000270 max=0.000911"
+          },
+          {
+            "name": "batched_4d",
+            "value": 5.888470000115831e-05,
+            "range": "\u00b1 0.000012",
+            "unit": "s",
+            "extra": "min=0.000053 max=0.000140"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "3915169+jjgoings@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "3915169+jjgoings@users.noreply.github.com"
+          },
+          "id": "7e848b3450a01489b9279592b66658d1732a4f3b",
+          "message": "Add benchmark CI with performance tracking on Ubuntu and macOS",
+          "timestamp": "2026-01-21T20:55:19Z",
+          "url": "https://github.com/jjgoings/pfapack/commit/7e848b3450a01489b9279592b66658d1732a4f3b"
+        },
+        "date": 1769106382108,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "c_loop",
+            "value": 0.0003598283599994545,
+            "range": "\u00b1 0.000039",
+            "unit": "s",
+            "extra": "min=0.000319 max=0.000636"
+          },
+          {
+            "name": "batched_4d",
+            "value": 3.3527740000494075e-05,
+            "range": "\u00b1 0.000004",
+            "unit": "s",
+            "extra": "min=0.000031 max=0.000056"
+          },
+          {
+            "name": "phase2_tomography",
+            "value": 0.235436570600001,
+            "range": "\u00b1 0.001456",
+            "unit": "s",
+            "extra": "n_sel=32"
+          },
+          {
+            "name": "phase2_many_small",
+            "value": 0.15187026360000289,
+            "range": "\u00b1 0.000125",
+            "unit": "s",
+            "extra": "outer=65536 n=8"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "3915169+jjgoings@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "3915169+jjgoings@users.noreply.github.com"
+          },
+          "id": "d0ba699e9590f449c1558fafea069de77c4e9991",
+          "message": "Optimize batched Pfaffian: workspace reuse, transpose elimination, consistent singular handling",
+          "timestamp": "2026-01-21T21:29:33Z",
+          "url": "https://github.com/jjgoings/pfapack/commit/d0ba699e9590f449c1558fafea069de77c4e9991"
+        },
+        "date": 1769106390408,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "c_loop",
+            "value": 0.00036017995999898744,
+            "range": "\u00b1 0.000043",
+            "unit": "s",
+            "extra": "min=0.000319 max=0.000685"
+          },
+          {
+            "name": "batched_4d",
+            "value": 3.249511000049665e-05,
+            "range": "\u00b1 0.000004",
+            "unit": "s",
+            "extra": "min=0.000031 max=0.000064"
+          },
+          {
+            "name": "phase2_tomography",
+            "value": 0.2306721485999958,
+            "range": "\u00b1 0.001168",
+            "unit": "s",
+            "extra": "n_sel=32"
+          },
+          {
+            "name": "phase2_many_small",
+            "value": 0.12289232320000565,
+            "range": "\u00b1 0.000203",
+            "unit": "s",
+            "extra": "outer=65536 n=8"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
             "email": "3915169+jjgoings@users.noreply.github.com",
             "name": "jjgoings",
             "username": "jjgoings"
@@ -138,6 +382,56 @@ window.BENCHMARK_DATA = {
       {
         "commit": {
           "author": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "3915169+jjgoings@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "3915169+jjgoings@users.noreply.github.com"
+          },
+          "id": "0825d76f7b87c61a84cb00f726782b317df8063b",
+          "message": "Optimize Parlett-Reid factorization: fused division, internal BLAS-1 kernels, batched row swaps",
+          "timestamp": "2026-01-22T05:43:03Z",
+          "url": "https://github.com/jjgoings/pfapack/commit/0825d76f7b87c61a84cb00f726782b317df8063b"
+        },
+        "date": 1769106399219,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "c_loop",
+            "value": 0.0004041499199888676,
+            "range": "\u00b1 0.000122",
+            "unit": "s",
+            "extra": "min=0.000311 max=0.000747"
+          },
+          {
+            "name": "batched_4d",
+            "value": 2.7058730006501718e-05,
+            "range": "\u00b1 0.000004",
+            "unit": "s",
+            "extra": "min=0.000026 max=0.000052"
+          },
+          {
+            "name": "phase2_tomography",
+            "value": 0.21778116919999774,
+            "range": "\u00b1 0.00339",
+            "unit": "s",
+            "extra": "n_sel=32"
+          },
+          {
+            "name": "phase2_many_small",
+            "value": 0.09313609059997816,
+            "range": "\u00b1 0.00101",
+            "unit": "s",
+            "extra": "outer=65536 n=8"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
             "email": "3915169+jjgoings@users.noreply.github.com",
             "name": "Joshua Goings",
             "username": "jjgoings"
@@ -196,300 +490,6 @@ window.BENCHMARK_DATA = {
             "name": "phase2_many_small",
             "value": 0.09623029260000919,
             "range": "\u00b1 0.000434",
-            "unit": "s",
-            "extra": "outer=65536 n=8"
-          }
-        ]
-      },
-      {
-        "commit": {
-          "author": {
-            "name": "jjgoings",
-            "username": "jjgoings",
-            "email": "jjgoings@gmail.com"
-          },
-          "committer": {
-            "name": "jjgoings",
-            "username": "jjgoings",
-            "email": "jjgoings@gmail.com"
-          },
-          "id": "0761f01bb615a85b46895d14417e9dfdee838bc4",
-          "message": "everything is c-contig",
-          "timestamp": "2024-10-31T22:00:19Z",
-          "url": "https://github.com/jjgoings/pfapack/commit/0761f01bb615a85b46895d14417e9dfdee838bc4"
-        },
-        "date": 1769106368745,
-        "tool": "customSmallerIsBetter",
-        "benches": [
-          {
-            "name": "c_loop",
-            "value": 0.00023474508000006722,
-            "range": "\u00b1 0.000027",
-            "unit": "s",
-            "extra": "min=0.000223 max=0.000420"
-          },
-          {
-            "name": "batched_4d",
-            "value": 5.6250519999707646e-05,
-            "range": "\u00b1 0.00001",
-            "unit": "s",
-            "extra": "min=0.000052 max=0.000116"
-          }
-        ]
-      },
-      {
-        "commit": {
-          "author": {
-            "name": "jjgoings",
-            "username": "jjgoings",
-            "email": "jjgoings@gmail.com"
-          },
-          "committer": {
-            "name": "jjgoings",
-            "username": "jjgoings",
-            "email": "jjgoings@gmail.com"
-          },
-          "id": "61ae64e6ab7ac7490ddc3e54d9bbc50ee9ec04a7",
-          "message": "superbatching",
-          "timestamp": "2024-07-31T22:44:29Z",
-          "url": "https://github.com/jjgoings/pfapack/commit/61ae64e6ab7ac7490ddc3e54d9bbc50ee9ec04a7"
-        },
-        "date": 1769106372357,
-        "tool": "customSmallerIsBetter",
-        "benches": [
-          {
-            "name": "c_loop",
-            "value": 0.00037324376000000823,
-            "range": "\u00b1 0.000161",
-            "unit": "s",
-            "extra": "min=0.000258 max=0.000851"
-          },
-          {
-            "name": "batched_4d",
-            "value": 7.029716999980451e-05,
-            "range": "\u00b1 0.000013",
-            "unit": "s",
-            "extra": "min=0.000064 max=0.000145"
-          }
-        ]
-      },
-      {
-        "commit": {
-          "author": {
-            "name": "jjgoings",
-            "username": "jjgoings",
-            "email": "jjgoings@gmail.com"
-          },
-          "committer": {
-            "name": "jjgoings",
-            "username": "jjgoings",
-            "email": "jjgoings@gmail.com"
-          },
-          "id": "7d310f121649f62c253bc07b9632cbd8492ec513",
-          "message": "single alloc",
-          "timestamp": "2024-11-26T19:40:52Z",
-          "url": "https://github.com/jjgoings/pfapack/commit/7d310f121649f62c253bc07b9632cbd8492ec513"
-        },
-        "date": 1769106374472,
-        "tool": "customSmallerIsBetter",
-        "benches": [
-          {
-            "name": "c_loop",
-            "value": 0.00030838036999881525,
-            "range": "\u00b1 0.000085",
-            "unit": "s",
-            "extra": "min=0.000270 max=0.000911"
-          },
-          {
-            "name": "batched_4d",
-            "value": 5.888470000115831e-05,
-            "range": "\u00b1 0.000012",
-            "unit": "s",
-            "extra": "min=0.000053 max=0.000140"
-          }
-        ]
-      },
-      {
-        "commit": {
-          "author": {
-            "name": "jjgoings",
-            "username": "jjgoings",
-            "email": "jjgoings@gmail.com"
-          },
-          "committer": {
-            "name": "jjgoings",
-            "username": "jjgoings",
-            "email": "jjgoings@gmail.com"
-          },
-          "id": "a028f71f3aca3907d0a2421d4929f13f9596b43d",
-          "message": "work with complex128 in interleaved fashion",
-          "timestamp": "2024-11-23T00:23:03Z",
-          "url": "https://github.com/jjgoings/pfapack/commit/a028f71f3aca3907d0a2421d4929f13f9596b43d"
-        },
-        "date": 1769106378268,
-        "tool": "customSmallerIsBetter",
-        "benches": [
-          {
-            "name": "c_loop",
-            "value": 0.00029028470000014295,
-            "range": "\u00b1 0.000031",
-            "unit": "s",
-            "extra": "min=0.000257 max=0.000500"
-          },
-          {
-            "name": "batched_4d",
-            "value": 6.725222000255826e-05,
-            "range": "\u00b1 0.000008",
-            "unit": "s",
-            "extra": "min=0.000063 max=0.000123"
-          }
-        ]
-      },
-      {
-        "commit": {
-          "author": {
-            "name": "jjgoings",
-            "username": "jjgoings",
-            "email": "3915169+jjgoings@users.noreply.github.com"
-          },
-          "committer": {
-            "name": "jjgoings",
-            "username": "jjgoings",
-            "email": "3915169+jjgoings@users.noreply.github.com"
-          },
-          "id": "7e848b3450a01489b9279592b66658d1732a4f3b",
-          "message": "Add benchmark CI with performance tracking on Ubuntu and macOS",
-          "timestamp": "2026-01-21T20:55:19Z",
-          "url": "https://github.com/jjgoings/pfapack/commit/7e848b3450a01489b9279592b66658d1732a4f3b"
-        },
-        "date": 1769106382108,
-        "tool": "customSmallerIsBetter",
-        "benches": [
-          {
-            "name": "c_loop",
-            "value": 0.0003598283599994545,
-            "range": "\u00b1 0.000039",
-            "unit": "s",
-            "extra": "min=0.000319 max=0.000636"
-          },
-          {
-            "name": "batched_4d",
-            "value": 3.3527740000494075e-05,
-            "range": "\u00b1 0.000004",
-            "unit": "s",
-            "extra": "min=0.000031 max=0.000056"
-          },
-          {
-            "name": "phase2_tomography",
-            "value": 0.235436570600001,
-            "range": "\u00b1 0.001456",
-            "unit": "s",
-            "extra": "n_sel=32"
-          },
-          {
-            "name": "phase2_many_small",
-            "value": 0.15187026360000289,
-            "range": "\u00b1 0.000125",
-            "unit": "s",
-            "extra": "outer=65536 n=8"
-          }
-        ]
-      },
-      {
-        "commit": {
-          "author": {
-            "name": "jjgoings",
-            "username": "jjgoings",
-            "email": "3915169+jjgoings@users.noreply.github.com"
-          },
-          "committer": {
-            "name": "jjgoings",
-            "username": "jjgoings",
-            "email": "3915169+jjgoings@users.noreply.github.com"
-          },
-          "id": "d0ba699e9590f449c1558fafea069de77c4e9991",
-          "message": "Optimize batched Pfaffian: workspace reuse, transpose elimination, consistent singular handling",
-          "timestamp": "2026-01-21T21:29:33Z",
-          "url": "https://github.com/jjgoings/pfapack/commit/d0ba699e9590f449c1558fafea069de77c4e9991"
-        },
-        "date": 1769106390408,
-        "tool": "customSmallerIsBetter",
-        "benches": [
-          {
-            "name": "c_loop",
-            "value": 0.00036017995999898744,
-            "range": "\u00b1 0.000043",
-            "unit": "s",
-            "extra": "min=0.000319 max=0.000685"
-          },
-          {
-            "name": "batched_4d",
-            "value": 3.249511000049665e-05,
-            "range": "\u00b1 0.000004",
-            "unit": "s",
-            "extra": "min=0.000031 max=0.000064"
-          },
-          {
-            "name": "phase2_tomography",
-            "value": 0.2306721485999958,
-            "range": "\u00b1 0.001168",
-            "unit": "s",
-            "extra": "n_sel=32"
-          },
-          {
-            "name": "phase2_many_small",
-            "value": 0.12289232320000565,
-            "range": "\u00b1 0.000203",
-            "unit": "s",
-            "extra": "outer=65536 n=8"
-          }
-        ]
-      },
-      {
-        "commit": {
-          "author": {
-            "name": "jjgoings",
-            "username": "jjgoings",
-            "email": "3915169+jjgoings@users.noreply.github.com"
-          },
-          "committer": {
-            "name": "jjgoings",
-            "username": "jjgoings",
-            "email": "3915169+jjgoings@users.noreply.github.com"
-          },
-          "id": "0825d76f7b87c61a84cb00f726782b317df8063b",
-          "message": "Optimize Parlett-Reid factorization: fused division, internal BLAS-1 kernels, batched row swaps",
-          "timestamp": "2026-01-22T05:43:03Z",
-          "url": "https://github.com/jjgoings/pfapack/commit/0825d76f7b87c61a84cb00f726782b317df8063b"
-        },
-        "date": 1769106399219,
-        "tool": "customSmallerIsBetter",
-        "benches": [
-          {
-            "name": "c_loop",
-            "value": 0.0004041499199888676,
-            "range": "\u00b1 0.000122",
-            "unit": "s",
-            "extra": "min=0.000311 max=0.000747"
-          },
-          {
-            "name": "batched_4d",
-            "value": 2.7058730006501718e-05,
-            "range": "\u00b1 0.000004",
-            "unit": "s",
-            "extra": "min=0.000026 max=0.000052"
-          },
-          {
-            "name": "phase2_tomography",
-            "value": 0.21778116919999774,
-            "range": "\u00b1 0.00339",
-            "unit": "s",
-            "extra": "n_sel=32"
-          },
-          {
-            "name": "phase2_many_small",
-            "value": 0.09313609059997816,
-            "range": "\u00b1 0.00101",
             "unit": "s",
             "extra": "outer=65536 n=8"
           }
