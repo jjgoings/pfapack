@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1769105988341,
+  "lastUpdate": 1769106012019,
   "repoUrl": "https://github.com/jjgoings/pfapack",
   "entries": {
     "PFAPACK Performance (macos-latest)": [
@@ -476,6 +476,42 @@ window.BENCHMARK_DATA = {
             "range": "± 0.000007",
             "unit": "s",
             "extra": "min=0.000037 max=0.000101"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "3915169+jjgoings@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "3915169+jjgoings@users.noreply.github.com"
+          },
+          "id": "7caf1dff77fcfaaed09383085f3f51d7058b6248",
+          "message": "Fix SHA checkout: fetch full history then manually checkout commit",
+          "timestamp": "2026-01-22T18:18:22Z",
+          "url": "https://github.com/jjgoings/pfapack/commit/7caf1dff77fcfaaed09383085f3f51d7058b6248"
+        },
+        "date": 1769106010682,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "c_loop",
+            "value": 0.00015610572999321447,
+            "range": "± 0.000162",
+            "unit": "s",
+            "extra": "min=0.000132 max=0.001759"
+          },
+          {
+            "name": "batched_4d",
+            "value": 0.00004035909000322135,
+            "range": "± 0.000007",
+            "unit": "s",
+            "extra": "min=0.000038 max=0.000093"
           }
         ]
       }
