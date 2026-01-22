@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1769106005204,
+  "lastUpdate": 1769106007527,
   "repoUrl": "https://github.com/jjgoings/pfapack",
   "entries": {
     "PFAPACK Performance (ubuntu-latest)": [
@@ -610,6 +610,56 @@ window.BENCHMARK_DATA = {
             "name": "phase2_many_small",
             "value": 0.12265585899999679,
             "range": "± 0.000319",
+            "unit": "s",
+            "extra": "outer=65536 n=8"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "3915169+jjgoings@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "3915169+jjgoings@users.noreply.github.com"
+          },
+          "id": "7caf1dff77fcfaaed09383085f3f51d7058b6248",
+          "message": "Fix SHA checkout: fetch full history then manually checkout commit",
+          "timestamp": "2026-01-22T18:18:22Z",
+          "url": "https://github.com/jjgoings/pfapack/commit/7caf1dff77fcfaaed09383085f3f51d7058b6248"
+        },
+        "date": 1769106007166,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "c_loop",
+            "value": 0.00035918713999905094,
+            "range": "± 0.000124",
+            "unit": "s",
+            "extra": "min=0.000260 max=0.000673"
+          },
+          {
+            "name": "batched_4d",
+            "value": 0.00003170617999870728,
+            "range": "± 0.000012",
+            "unit": "s",
+            "extra": "min=0.000025 max=0.000068"
+          },
+          {
+            "name": "phase2_tomography",
+            "value": 0.25011963879999827,
+            "range": "± 0.001109",
+            "unit": "s",
+            "extra": "n_sel=32"
+          },
+          {
+            "name": "phase2_many_small",
+            "value": 0.10409402039999804,
+            "range": "± 0.000899",
             "unit": "s",
             "extra": "outer=65536 n=8"
           }
