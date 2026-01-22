@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1769110941386,
+  "lastUpdate": 1769110949368,
   "repoUrl": "https://github.com/jjgoings/pfapack",
   "entries": {
     "PFAPACK Performance (macos-latest)": [
@@ -1032,6 +1032,63 @@ window.BENCHMARK_DATA = {
             "name": "phase2_many_small",
             "value": 0.8545662413999991,
             "range": "± 0.030174",
+            "unit": "s",
+            "extra": "outer=65536 n=8"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "jjgoings@gmail.com"
+          },
+          "committer": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "jjgoings@gmail.com"
+          },
+          "id": "61ae64e6ab7ac7490ddc3e54d9bbc50ee9ec04a7",
+          "message": "superbatching",
+          "timestamp": "2024-07-31T22:44:29Z",
+          "url": "https://github.com/jjgoings/pfapack/commit/61ae64e6ab7ac7490ddc3e54d9bbc50ee9ec04a7"
+        },
+        "date": 1769110948061,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "python_loop",
+            "value": 0.0015986221199996464,
+            "range": "± 0.000388",
+            "unit": "s",
+            "extra": "min=0.001459 max=0.004581"
+          },
+          {
+            "name": "c_loop",
+            "value": 0.00013684919999889188,
+            "range": "± 0.000145",
+            "unit": "s",
+            "extra": "min=0.000110 max=0.001485"
+          },
+          {
+            "name": "batched_3d",
+            "value": 0.00003892406999966624,
+            "range": "± 0.000012",
+            "unit": "s",
+            "extra": "min=0.000035 max=0.000123"
+          },
+          {
+            "name": "batched_4d",
+            "value": 0.000039699549998601926,
+            "range": "± 0.000006",
+            "unit": "s",
+            "extra": "min=0.000038 max=0.000091"
+          },
+          {
+            "name": "phase2_many_small",
+            "value": 0.9039764080000026,
+            "range": "± 0.058224",
             "unit": "s",
             "extra": "outer=65536 n=8"
           }
