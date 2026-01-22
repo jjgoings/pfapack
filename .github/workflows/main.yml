@@ -126,11 +126,23 @@ jobs:
         import numpy as np
 
         # Try different import paths for compatibility with old commits
+        pf_python = None
         pf_ctypes = None
+        pf_batched_3d = None
         pf_batched_4d = None
 
         try:
+            from pfapack.pfaffian import pfaffian as pf_python
+        except ImportError:
+            pass
+
+        try:
             from pfapack.ctypes import pfaffian as pf_ctypes
+        except ImportError:
+            pass
+
+        try:
+            from pfapack.ctypes import pfaffian_batched as pf_batched_3d
         except ImportError:
             pass
 
@@ -153,9 +165,26 @@ jobs:
         n, outer, inner = 16, 5, 3
         n_iters = 100
 
-        # Generate test matrix
+        # Generate test matrices
         A_batch = np.random.randn(outer, inner, n, n) + 1j*np.random.randn(outer, inner, n, n)
         A_batch = A_batch - A_batch.transpose(0, 1, 3, 2)
+        A_3d = A_batch.reshape(outer * inner, n, n)
+
+        # python_loop benchmark (pure Python)
+        if pf_python:
+            times = []
+            for _ in range(n_iters):
+                t0 = time.perf_counter()
+                for i in range(outer):
+                    for j in range(inner):
+                        pf_python(A_batch[i,j].copy())
+                times.append(time.perf_counter() - t0)
+            results['benchmarks'].append({
+                'name': 'python_loop',
+                'stats': {'mean': np.mean(times), 'stddev': np.std(times),
+                         'min': np.min(times), 'max': np.max(times)}
+            })
+            print(f'python_loop: {np.mean(times)*1000:.3f} ms')
 
         # c_loop benchmark (individual pfaffian calls)
         if pf_ctypes:
@@ -172,6 +201,20 @@ jobs:
                          'min': np.min(times), 'max': np.max(times)}
             })
             print(f'c_loop: {np.mean(times)*1000:.3f} ms')
+
+        # batched_3d benchmark (if available)
+        if pf_batched_3d:
+            times = []
+            for _ in range(n_iters):
+                t0 = time.perf_counter()
+                pf_batched_3d(A_3d.copy())
+                times.append(time.perf_counter() - t0)
+            results['benchmarks'].append({
+                'name': 'batched_3d',
+                'stats': {'mean': np.mean(times), 'stddev': np.std(times),
+                         'min': np.min(times), 'max': np.max(times)}
+            })
+            print(f'batched_3d: {np.mean(times)*1000:.3f} ms')
 
         # batched_4d benchmark (if available)
         if pf_batched_4d:
