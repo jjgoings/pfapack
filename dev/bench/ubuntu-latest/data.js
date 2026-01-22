@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1769032471054,
+  "lastUpdate": 1769060903024,
   "repoUrl": "https://github.com/jjgoings/pfapack",
   "entries": {
     "PFAPACK Performance (ubuntu-latest)": [
@@ -328,6 +328,72 @@ window.BENCHMARK_DATA = {
             "name": "phase2_many_small",
             "value": 0.12332988599999908,
             "range": "± 0.000568",
+            "unit": "s",
+            "extra": "outer=65536 n=8"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "3915169+jjgoings@users.noreply.github.com",
+            "name": "Joshua Goings",
+            "username": "jjgoings"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4d5e4dbd85db498f2b7cf3ba9c4f0d9d0b3405af",
+          "message": "Merge pull request #7 from jjgoings/fortran-optimizations\n\nOptimize Parlett-Reid factorization for small matrices",
+          "timestamp": "2026-01-21T21:45:51-08:00",
+          "tree_id": "6075e65401c6bba038b7584ef43ec407446db01e",
+          "url": "https://github.com/jjgoings/pfapack/commit/4d5e4dbd85db498f2b7cf3ba9c4f0d9d0b3405af"
+        },
+        "date": 1769060902557,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "python_loop",
+            "value": 0.00370461780784321,
+            "range": "± 0.000039",
+            "unit": "s",
+            "extra": "min=0.003641 max=0.003874"
+          },
+          {
+            "name": "c_loop",
+            "value": 0.0006365233936168683,
+            "range": "± 0.000338",
+            "unit": "s",
+            "extra": "min=0.000586 max=0.011832"
+          },
+          {
+            "name": "batched_3d",
+            "value": 0.000080287793157701,
+            "range": "± 0.000016",
+            "unit": "s",
+            "extra": "min=0.000075 max=0.000239"
+          },
+          {
+            "name": "batched_4d",
+            "value": 0.00002061992995989886,
+            "range": "± 0.000006",
+            "unit": "s",
+            "extra": "min=0.000019 max=0.000129"
+          },
+          {
+            "name": "phase2_tomography",
+            "value": 0.22819884499999715,
+            "range": "± 0.001492",
+            "unit": "s",
+            "extra": "n_sel=32"
+          },
+          {
+            "name": "phase2_many_small",
+            "value": 0.09623029260000919,
+            "range": "± 0.000434",
             "unit": "s",
             "extra": "outer=65536 n=8"
           }
