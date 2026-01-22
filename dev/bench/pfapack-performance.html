@@ -380,12 +380,13 @@
         processEntries(ubuntuEntries, 'ubuntu');
         processEntries(macosEntries, 'macos');
 
-        // Sort by commit timestamp (ISO 8601 sorts lexicographically)
+        // Sort by commit timestamp (use Date parsing to handle timezone differences)
+        const sortByTimestamp = (a, b) => new Date(a.timestamp) - new Date(b.timestamp);
         const result = {};
         for (const [name, platforms] of Object.entries(benchmarks)) {
             result[name] = {
-                ubuntu: Object.values(platforms.ubuntu).sort((a, b) => a.timestamp.localeCompare(b.timestamp)),
-                macos: Object.values(platforms.macos).sort((a, b) => a.timestamp.localeCompare(b.timestamp))
+                ubuntu: Object.values(platforms.ubuntu).sort(sortByTimestamp),
+                macos: Object.values(platforms.macos).sort(sortByTimestamp)
             };
         }
 
@@ -435,7 +436,7 @@
         const allCommits = new Map();
         data.ubuntu.forEach(d => allCommits.set(d.commit, d));
         data.macos.forEach(d => { if (!allCommits.has(d.commit)) allCommits.set(d.commit, d); });
-        const sortedCommits = Array.from(allCommits.values()).sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+        const sortedCommits = Array.from(allCommits.values()).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
         const ubuntuMap = new Map(data.ubuntu.map(d => [d.commit, d]));
         const macosMap = new Map(data.macos.map(d => [d.commit, d]));
@@ -523,7 +524,7 @@
         const allCommits = new Map();
         data.ubuntu.forEach(d => allCommits.set(d.commit, d));
         data.macos.forEach(d => { if (!allCommits.has(d.commit)) allCommits.set(d.commit, d); });
-        const sortedCommits = Array.from(allCommits.values()).sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+        const sortedCommits = Array.from(allCommits.values()).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
         const labels = sortedCommits.map(d => d.commit);
 
         const ubuntuMap = new Map(data.ubuntu.map(d => [d.commit, d]));
