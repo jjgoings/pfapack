@@ -68,8 +68,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
-        ref: ${{ github.event.inputs.benchmark_ref || github.sha }}
         fetch-depth: 0  # Full history needed to checkout old commits by SHA
+
+    - name: Checkout specific commit (for historical benchmarks)
+      if: github.event.inputs.benchmark_ref != ''
+      run: git checkout ${{ github.event.inputs.benchmark_ref }}
 
     - name: Set up Python
       uses: actions/setup-python@v5
