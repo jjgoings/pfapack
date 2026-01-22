@@ -340,18 +340,6 @@
         const ubuntuEntries = Object.values(ubuntuData.entries)[0] || [];
         const macosEntries = Object.values(macosData.entries)[0] || [];
 
-        const commitOrder = {};
-        ubuntuEntries.forEach((entry, idx) => {
-            commitOrder[entry.commit.id.slice(0, 7)] = idx;
-        });
-
-        macosEntries.forEach((entry, idx) => {
-            const short = entry.commit.id.slice(0, 7);
-            if (!(short in commitOrder)) {
-                commitOrder[short] = Object.keys(commitOrder).length;
-            }
-        });
-
         const benchmarks = {};
 
         function processEntries(entries, platform) {
@@ -383,8 +371,7 @@
                         yMin: Math.max(0, bench.value - ci95),
                         yMax: bench.value + ci95,
                         min: extra.min,
-                        max: extra.max,
-                        order: commitOrder[commit]
+                        max: extra.max
                     };
                 });
             });
@@ -393,11 +380,12 @@
         processEntries(ubuntuEntries, 'ubuntu');
         processEntries(macosEntries, 'macos');
 
+        // Sort by commit timestamp (ISO 8601 sorts lexicographically)
         const result = {};
         for (const [name, platforms] of Object.entries(benchmarks)) {
             result[name] = {
-                ubuntu: Object.values(platforms.ubuntu).sort((a, b) => a.order - b.order),
-                macos: Object.values(platforms.macos).sort((a, b) => a.order - b.order)
+                ubuntu: Object.values(platforms.ubuntu).sort((a, b) => a.timestamp.localeCompare(b.timestamp)),
+                macos: Object.values(platforms.macos).sort((a, b) => a.timestamp.localeCompare(b.timestamp))
             };
         }
 
@@ -447,7 +435,7 @@
         const allCommits = new Map();
         data.ubuntu.forEach(d => allCommits.set(d.commit, d));
         data.macos.forEach(d => { if (!allCommits.has(d.commit)) allCommits.set(d.commit, d); });
-        const sortedCommits = Array.from(allCommits.values()).sort((a, b) => a.order - b.order);
+        const sortedCommits = Array.from(allCommits.values()).sort((a, b) => a.timestamp.localeCompare(b.timestamp));
 
         const ubuntuMap = new Map(data.ubuntu.map(d => [d.commit, d]));
         const macosMap = new Map(data.macos.map(d => [d.commit, d]));
@@ -535,7 +523,7 @@
         const allCommits = new Map();
         data.ubuntu.forEach(d => allCommits.set(d.commit, d));
         data.macos.forEach(d => { if (!allCommits.has(d.commit)) allCommits.set(d.commit, d); });
-        const sortedCommits = Array.from(allCommits.values()).sort((a, b) => a.order - b.order);
+        const sortedCommits = Array.from(allCommits.values()).sort((a, b) => a.timestamp.localeCompare(b.timestamp));
         const labels = sortedCommits.map(d => d.commit);
 
         const ubuntuMap = new Map(data.ubuntu.map(d => [d.commit, d]));
