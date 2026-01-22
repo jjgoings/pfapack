@@ -164,14 +164,16 @@
       LOGICAL            UPPER, NORMAL
       INTEGER            K, KK, KP, STEP
       DOUBLE PRECISION   COLMAX
+      DOUBLE COMPLEX     ZINV
 *     ..
 *     .. External Functions ..
       LOGICAL            LSAME
-      INTEGER            IZAMAX
-      EXTERNAL           LSAME, IZAMAX
+      INTEGER            IZAMAX_U1
+      EXTERNAL           LSAME, IZAMAX_U1
 *     ..
 *     .. External Subroutines ..
-      EXTERNAL           ZSCAL, ZSWAP, ZSKR2, XERBLA
+      EXTERNAL           ZSCAL_U1, ZSWAP_U1, ZNEG_U1, ZSKR2_U1, ZSKR2_L1,
+     $                   ZSWAP, ZSCAL, XERBLA
 *     ..
 *     .. Intrinsic Functions ..
       INTRINSIC          ABS, MAX, SQRT
@@ -218,7 +220,7 @@
 *     Either all columns or only the even ones (MODE = 'P')
             IF( MOD(K, STEP) .EQ. 0) THEN
 *     Find the pivot
-               KP = IZAMAX(K-1, A( 1, K ), 1)
+               KP = IZAMAX_U1(K-1, A( 1, K ))
                COLMAX = ABS( A( KP, K ) )
 
                IF( COLMAX.EQ.ZERO ) THEN
@@ -234,24 +236,24 @@
                KK = K-1
 
                IF( KP .NE. KK ) THEN
-                  CALL ZSWAP( KP-1, A( 1, KK ), 1, A( 1, KP ), 1)
+                  CALL ZSWAP_U1( KP-1, A( 1, KK ), A( 1, KP ))
                   CALL ZSWAP( KK-KP-1, A( KP+1, KK ), 1,
      $                 A( KP, KP+1 ), LDA )
 
                   CALL ZSWAP( N-K+1, A( KK, K), LDA, A( KP, K), LDA)
 
-                  CALL ZSCAL(KK-KP, -ONE, A(KP, KK), 1)
+                  CALL ZNEG_U1(KK-KP, A(KP, KK))
                   CALL ZSCAL(KK-KP-1, -ONE, A(KP, KP+1), LDA)
                END IF
 
 *     Update the leading submatrix A(1:K-2, 1:K-2) in a rank 2 update
 *     (The column/row K-1 is not affected by the update)
                IF( COLMAX .NE. ZERO ) THEN
-                  CALL ZSKR2( UPLO, K-2, ONE/A( K-1,K ), A( 1, K ), 1,
-     $                 A( 1, K-1 ), 1, A( 1, 1 ), LDA )
-
-*     Store L(k+1) in A(k)
-                  CALL ZSCAL(K-2, ONE/A( K-1, K ), A(1, K), 1)
+*     Precompute inverse and scale first to avoid redundant division
+                  ZINV = ONE / A( K-1, K )
+                  CALL ZSCAL_U1(K-2, ZINV, A(1, K))
+                  CALL ZSKR2_U1( K-2, ONE, A( 1, K ),
+     $                 A( 1, K-1 ), A( 1, 1 ), LDA )
                END IF
 *     Store Pivot
                IPIV( K-1 ) = KP
@@ -269,7 +271,7 @@
 *     Either all columns or only the odd ones (MODE = 'P')
             IF( MOD(K, STEP).EQ.1 .OR. STEP.EQ.1 ) THEN
 *     Find the pivot
-               KP = K + IZAMAX(N-K, A( K+1, K ), 1)
+               KP = K + IZAMAX_U1(N-K, A( K+1, K ))
                COLMAX = ABS( A( KP, K ) )
 
                IF( COLMAX.EQ.ZERO ) THEN
@@ -286,8 +288,8 @@
 
                IF( KP .NE. KK ) THEN
                   IF( KP.LT.N ) THEN
-                     CALL ZSWAP( N-KP, A( KP+1, KK ), 1,
-     $                    A( KP+1, KP ),1 )
+                     CALL ZSWAP_U1( N-KP, A( KP+1, KK ),
+     $                    A( KP+1, KP ) )
                   END IF
 
                   CALL ZSWAP( KP-KK-1, A( KK+1, KK ), 1,
@@ -295,19 +297,19 @@
 
                   CALL ZSWAP( K, A( KK, 1), LDA, A( KP, 1), LDA)
 
-                  CALL ZSCAL(KP-KK, -ONE, A(KK+1, KK), 1)
+                  CALL ZNEG_U1(KP-KK, A(KK+1, KK))
                   CALL ZSCAL(KP-KK-1, -ONE, A(KP, KK+1), LDA)
                END IF
 
 *     Update the trailing submatrix A(K+2:N, K+2:N) in a rank 2 update
 *     (The column/row K+1 is not affected by the update)
                IF( COLMAX .NE. ZERO .AND. K+2 .LE. N) THEN
-                  CALL ZSKR2( UPLO, N-K-1, ONE/A( K+1,K ),
-     $                 A( K+2, K ), 1, A( K+2, K+1 ), 1,
+*     Precompute inverse and scale first to avoid redundant division
+                  ZINV = ONE / A( K+1, K )
+                  CALL ZSCAL_U1(N-K-1, ZINV, A(K+2, K))
+                  CALL ZSKR2_L1( N-K-1, ONE,
+     $                 A( K+2, K ), A( K+2, K+1 ),
      $                 A( K+2, K+2 ), LDA )
-
-*     Store L(k+1) in A(k)
-                  CALL ZSCAL(N-K-1, ONE/A( K+1, K ), A(K+2, K), 1)
                END IF
 
 *     Store Pivot
