@@ -176,7 +176,7 @@
       EXTERNAL           LSAME, ILAENV
 *     ..
 *     .. External Subroutines ..
-      EXTERNAL           ZLASKTRF, ZSKTF2, ZSWAP, XERBLA
+      EXTERNAL           ZLASKTRF, ZSKTF2, ZSWAP, ZLASWP, XERBLA
 *     ..
 *     .. Intrinsic Functions ..
       INTRINSIC          MAX
@@ -282,11 +282,8 @@
      $           INFO = IINFO
 
 *     Perform the missing row interchanges in the trailing N-K columns
-            IF( K .LT. N ) THEN
-               DO 20 J=K-1, K2, -1
-                  CALL ZSWAP( N-K, A( J, K+1 ), LDA,
-     $                 A( IPIV( J ), K+1 ), LDA )
- 20            CONTINUE
+            IF( K .LT. N .AND. K2 .LE. K-1 ) THEN
+               CALL ZLASWP( N-K, A( 1, K+1 ), LDA, K2, K-1, IPIV, -1 )
             END IF
 
  10   CONTINUE
@@ -336,11 +333,8 @@
  40         CONTINUE
 
 *     Perform the missing row interchanges in the leading K-1 columns
-            IF( K .GT. 1 ) THEN
-               DO 50 J=K+1, K2
-                  CALL ZSWAP( K-1, A( J, 1 ), LDA,
-     $                 A( IPIV( J ), 1 ), LDA )
- 50            CONTINUE
+            IF( K .GT. 1 .AND. K+1 .LE. K2 ) THEN
+               CALL ZLASWP( K-1, A( 1, 1 ), LDA, K+1, K2, IPIV, 1 )
             END IF
 
 

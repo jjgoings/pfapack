@@ -240,3 +240,122 @@
 *     End of ZSKR2 .
 *
       END
+
+*     ================================================================
+*     Internal unit-stride kernels for factorization hot path
+*     These assume valid inputs and INCX=INCY=1
+*     ================================================================
+
+      SUBROUTINE ZSKR2_U1(N,ALPHA,X,Y,A,LDA)
+*     Internal: Upper triangle, INCX=INCY=1, no validation
+*     .. Scalar Arguments ..
+      DOUBLE COMPLEX ALPHA
+      INTEGER LDA,N
+*     ..
+*     .. Array Arguments ..
+      DOUBLE COMPLEX A(LDA,*),X(*),Y(*)
+*     ..
+*     .. Local Scalars ..
+      DOUBLE COMPLEX TEMP1,TEMP2,ZERO
+      INTEGER I,J
+      PARAMETER (ZERO= (0.0D+0,0.0D+0))
+*     ..
+      IF (N.LE.0) RETURN
+      DO 20 J = 1,N
+          TEMP1 = ALPHA*Y(J)
+          TEMP2 = ALPHA*X(J)
+          DO 10 I = 1,J - 1
+              A(I,J) = A(I,J) + X(I)*TEMP1 - Y(I)*TEMP2
+   10     CONTINUE
+          A(J,J) = ZERO
+   20 CONTINUE
+      RETURN
+      END
+
+      SUBROUTINE ZSKR2_L1(N,ALPHA,X,Y,A,LDA)
+*     Internal: Lower triangle, INCX=INCY=1, no validation
+*     .. Scalar Arguments ..
+      DOUBLE COMPLEX ALPHA
+      INTEGER LDA,N
+*     ..
+*     .. Array Arguments ..
+      DOUBLE COMPLEX A(LDA,*),X(*),Y(*)
+*     ..
+*     .. Local Scalars ..
+      DOUBLE COMPLEX TEMP1,TEMP2,ZERO
+      INTEGER I,J
+      PARAMETER (ZERO= (0.0D+0,0.0D+0))
+*     ..
+      IF (N.LE.0) RETURN
+      DO 20 J = 1,N
+          TEMP1 = ALPHA*Y(J)
+          TEMP2 = ALPHA*X(J)
+          A(J,J) = ZERO
+          DO 10 I = J + 1,N
+              A(I,J) = A(I,J) + X(I)*TEMP1 - Y(I)*TEMP2
+   10     CONTINUE
+   20 CONTINUE
+      RETURN
+      END
+
+*     ================================================================
+*     Additional internal BLAS-1 kernels for tiny n hot path
+*     ================================================================
+
+      INTEGER FUNCTION IZAMAX_U1(N, X)
+*     Internal: unit-stride IZAMAX, no validation
+*     Uses 1-norm (|Re| + |Im|) to match BLAS IZAMAX
+      INTEGER N, I
+      DOUBLE COMPLEX X(*)
+      DOUBLE PRECISION BEST, T
+      IF (N.LE.0) THEN
+          IZAMAX_U1 = 0
+          RETURN
+      END IF
+      IZAMAX_U1 = 1
+      IF (N.EQ.1) RETURN
+      BEST = DABS(DBLE(X(1))) + DABS(DIMAG(X(1)))
+      DO 10 I = 2, N
+          T = DABS(DBLE(X(I))) + DABS(DIMAG(X(I)))
+          IF (T.GT.BEST) THEN
+              BEST = T
+              IZAMAX_U1 = I
+          END IF
+   10 CONTINUE
+      RETURN
+      END
+
+      SUBROUTINE ZSCAL_U1(N, ALPHA, X)
+*     Internal: unit-stride ZSCAL, no validation
+      INTEGER N, I
+      DOUBLE COMPLEX ALPHA, X(*)
+      IF (N.LE.0) RETURN
+      DO 10 I = 1, N
+          X(I) = ALPHA * X(I)
+   10 CONTINUE
+      RETURN
+      END
+
+      SUBROUTINE ZSWAP_U1(N, X, Y)
+*     Internal: unit-stride ZSWAP, no validation
+      INTEGER N, I
+      DOUBLE COMPLEX X(*), Y(*), TEMP
+      IF (N.LE.0) RETURN
+      DO 10 I = 1, N
+          TEMP = X(I)
+          X(I) = Y(I)
+          Y(I) = TEMP
+   10 CONTINUE
+      RETURN
+      END
+
+      SUBROUTINE ZNEG_U1(N, X)
+*     Internal: negate unit-stride vector (X = -X)
+      INTEGER N, I
+      DOUBLE COMPLEX X(*)
+      IF (N.LE.0) RETURN
+      DO 10 I = 1, N
+          X(I) = -X(I)
+   10 CONTINUE
+      RETURN
+      END

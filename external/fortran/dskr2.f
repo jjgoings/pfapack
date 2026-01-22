@@ -240,3 +240,120 @@
 *     End of DSKR2 .
 *
       END
+
+*     ================================================================
+*     Internal unit-stride kernels for factorization hot path
+*     These assume valid inputs and INCX=INCY=1
+*     ================================================================
+
+      SUBROUTINE DSKR2_U1(N,ALPHA,X,Y,A,LDA)
+*     Internal: Upper triangle, INCX=INCY=1, no validation
+*     .. Scalar Arguments ..
+      DOUBLE PRECISION ALPHA
+      INTEGER LDA,N
+*     ..
+*     .. Array Arguments ..
+      DOUBLE PRECISION A(LDA,*),X(*),Y(*)
+*     ..
+*     .. Local Scalars ..
+      DOUBLE PRECISION TEMP1,TEMP2,ZERO
+      INTEGER I,J
+      PARAMETER (ZERO = 0.0D+0)
+*     ..
+      IF (N.LE.0) RETURN
+      DO 20 J = 1,N
+          TEMP1 = ALPHA*Y(J)
+          TEMP2 = ALPHA*X(J)
+          DO 10 I = 1,J - 1
+              A(I,J) = A(I,J) + X(I)*TEMP1 - Y(I)*TEMP2
+   10     CONTINUE
+          A(J,J) = ZERO
+   20 CONTINUE
+      RETURN
+      END
+
+      SUBROUTINE DSKR2_L1(N,ALPHA,X,Y,A,LDA)
+*     Internal: Lower triangle, INCX=INCY=1, no validation
+*     .. Scalar Arguments ..
+      DOUBLE PRECISION ALPHA
+      INTEGER LDA,N
+*     ..
+*     .. Array Arguments ..
+      DOUBLE PRECISION A(LDA,*),X(*),Y(*)
+*     ..
+*     .. Local Scalars ..
+      DOUBLE PRECISION TEMP1,TEMP2,ZERO
+      INTEGER I,J
+      PARAMETER (ZERO = 0.0D+0)
+*     ..
+      IF (N.LE.0) RETURN
+      DO 20 J = 1,N
+          TEMP1 = ALPHA*Y(J)
+          TEMP2 = ALPHA*X(J)
+          A(J,J) = ZERO
+          DO 10 I = J + 1,N
+              A(I,J) = A(I,J) + X(I)*TEMP1 - Y(I)*TEMP2
+   10     CONTINUE
+   20 CONTINUE
+      RETURN
+      END
+
+*     ================================================================
+*     Additional internal BLAS-1 kernels for tiny n hot path
+*     ================================================================
+
+      INTEGER FUNCTION IDAMAX_U1(N, X)
+*     Internal: unit-stride IDAMAX, no validation
+      INTEGER N, I
+      DOUBLE PRECISION X(*), BEST, T
+      IF (N.LE.0) THEN
+          IDAMAX_U1 = 0
+          RETURN
+      END IF
+      IDAMAX_U1 = 1
+      IF (N.EQ.1) RETURN
+      BEST = DABS(X(1))
+      DO 10 I = 2, N
+          T = DABS(X(I))
+          IF (T.GT.BEST) THEN
+              BEST = T
+              IDAMAX_U1 = I
+          END IF
+   10 CONTINUE
+      RETURN
+      END
+
+      SUBROUTINE DSCAL_U1(N, ALPHA, X)
+*     Internal: unit-stride DSCAL, no validation
+      INTEGER N, I
+      DOUBLE PRECISION ALPHA, X(*)
+      IF (N.LE.0) RETURN
+      DO 10 I = 1, N
+          X(I) = ALPHA * X(I)
+   10 CONTINUE
+      RETURN
+      END
+
+      SUBROUTINE DSWAP_U1(N, X, Y)
+*     Internal: unit-stride DSWAP, no validation
+      INTEGER N, I
+      DOUBLE PRECISION X(*), Y(*), TEMP
+      IF (N.LE.0) RETURN
+      DO 10 I = 1, N
+          TEMP = X(I)
+          X(I) = Y(I)
+          Y(I) = TEMP
+   10 CONTINUE
+      RETURN
+      END
+
+      SUBROUTINE DNEG_U1(N, X)
+*     Internal: negate unit-stride vector (X = -X)
+      INTEGER N, I
+      DOUBLE PRECISION X(*)
+      IF (N.LE.0) RETURN
+      DO 10 I = 1, N
+          X(I) = -X(I)
+   10 CONTINUE
+      RETURN
+      END
