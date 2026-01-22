@@ -55,13 +55,19 @@ def _repo_root() -> Path:
 
 sys.path.insert(0, str(_repo_root()))
 
-from pfapack.ctypes import (  # noqa: E402
-    pfaffian as cpfaffian,
-    pfaffian_batched_4d,
-    pfaffian_batched_4d_with_inverse,
-    pfaffian_deriv_1,
-    pfaffian_deriv_2,
-)
+from pfapack.ctypes import pfaffian as cpfaffian  # noqa: E402
+from pfapack.ctypes import pfaffian_batched_4d  # noqa: E402
+
+# Optional imports for tomography workload (may not exist in older versions)
+try:
+    from pfapack.ctypes import pfaffian_batched_4d_with_inverse  # noqa: E402
+    from pfapack.ctypes import pfaffian_deriv_1, pfaffian_deriv_2  # noqa: E402
+    HAS_TOMOGRAPHY_FUNCS = True
+except ImportError:
+    HAS_TOMOGRAPHY_FUNCS = False
+    pfaffian_batched_4d_with_inverse = None  # type: ignore
+    pfaffian_deriv_1 = None  # type: ignore
+    pfaffian_deriv_2 = None  # type: ignore
 
 
 def _sysctl(key: str) -> str | None:
@@ -560,16 +566,19 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     if args.cmd in {"tomography", "all"}:
-        fn, meta = workload_tomography(
-            nshadow=args.nshadow,
-            ngrid=args.ngrid,
-            n_sel=args.n_sel,
-            n_full=args.n_full,
-            seed=args.seed,
-            method=args.method,
-            validate=args.validate,
-        )
-        run_one("tomography", fn, meta)
+        if not HAS_TOMOGRAPHY_FUNCS:
+            print("\nSkipping tomography: pfaffian_batched_4d_with_inverse not available")
+        else:
+            fn, meta = workload_tomography(
+                nshadow=args.nshadow,
+                ngrid=args.ngrid,
+                n_sel=args.n_sel,
+                n_full=args.n_full,
+                seed=args.seed,
+                method=args.method,
+                validate=args.validate,
+            )
+            run_one("tomography", fn, meta)
 
     if args.cmd in {"many-small", "all"}:
         fn, meta = workload_many_small(
