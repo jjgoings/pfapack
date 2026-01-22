@@ -339,6 +339,13 @@ jobs:
       id: get-sha
       run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
+    - name: Clean up restored benchmark scripts (for historical benchmarks)
+      if: github.event.inputs.benchmark_ref != ''
+      run: |
+        # Remove restored bench files to avoid git conflicts when benchmark-action switches to gh-pages
+        rm -rf bench/
+        git checkout -- . 2>/dev/null || true
+
     - name: Store benchmark results
       uses: benchmark-action/github-action-benchmark@v1
       with:
