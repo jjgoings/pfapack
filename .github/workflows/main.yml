@@ -73,12 +73,13 @@ jobs:
     - name: Save benchmark scripts (for historical benchmarks)
       if: github.event.inputs.benchmark_ref != ''
       run: |
-        # Use RUNNER_TEMP which is guaranteed to persist across steps (macOS /tmp can be unreliable)
+        # Use RUNNER_TEMP which is guaranteed to persist across steps
+        # Note: BSD cp (macOS) and GNU cp (Linux) behave differently with trailing slashes
         BENCH_BACKUP="${RUNNER_TEMP}/bench-scripts-backup"
-        mkdir -p "$BENCH_BACKUP"
+        mkdir -p "$BENCH_BACKUP/bench"
         if [ -d bench ]; then
-          cp -a bench/ "$BENCH_BACKUP/"
-          echo "Saved bench/ to $BENCH_BACKUP/bench/"
+          cp -a bench/* "$BENCH_BACKUP/bench/"
+          echo "Saved bench/* to $BENCH_BACKUP/bench/"
           ls -la "$BENCH_BACKUP/bench/"
         else
           echo "WARNING: bench/ directory not found on main branch"
