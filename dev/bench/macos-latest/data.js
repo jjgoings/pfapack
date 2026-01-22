@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1769106385045,
+  "lastUpdate": 1769106387209,
   "repoUrl": "https://github.com/jjgoings/pfapack",
   "entries": {
     "PFAPACK Performance (macos-latest)": [
@@ -306,6 +306,56 @@ window.BENCHMARK_DATA = {
             "range": "± 0.000054",
             "unit": "s",
             "extra": "min=0.000038 max=0.000265"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "3915169+jjgoings@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "3915169+jjgoings@users.noreply.github.com"
+          },
+          "id": "7e848b3450a01489b9279592b66658d1732a4f3b",
+          "message": "Add benchmark CI with performance tracking on Ubuntu and macOS",
+          "timestamp": "2026-01-21T20:55:19Z",
+          "url": "https://github.com/jjgoings/pfapack/commit/7e848b3450a01489b9279592b66658d1732a4f3b"
+        },
+        "date": 1769106383881,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "c_loop",
+            "value": 0.00015392742999864595,
+            "range": "± 0.000153",
+            "unit": "s",
+            "extra": "min=0.000130 max=0.001667"
+          },
+          {
+            "name": "batched_4d",
+            "value": 0.000022007900000744484,
+            "range": "± 0.000002",
+            "unit": "s",
+            "extra": "min=0.000021 max=0.000043"
+          },
+          {
+            "name": "phase2_tomography",
+            "value": 0.10470149179999452,
+            "range": "± 0.006729",
+            "unit": "s",
+            "extra": "n_sel=32"
+          },
+          {
+            "name": "phase2_many_small",
+            "value": 0.16842660840000007,
+            "range": "± 0.022993",
+            "unit": "s",
+            "extra": "outer=65536 n=8"
           }
         ]
       }
