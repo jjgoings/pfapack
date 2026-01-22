@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1769106370218,
+  "lastUpdate": 1769106373089,
   "repoUrl": "https://github.com/jjgoings/pfapack",
   "entries": {
     "PFAPACK Performance (ubuntu-latest)": [
@@ -234,6 +234,42 @@ window.BENCHMARK_DATA = {
             "range": "± 0.00001",
             "unit": "s",
             "extra": "min=0.000052 max=0.000116"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "jjgoings@gmail.com"
+          },
+          "committer": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "jjgoings@gmail.com"
+          },
+          "id": "61ae64e6ab7ac7490ddc3e54d9bbc50ee9ec04a7",
+          "message": "superbatching",
+          "timestamp": "2024-07-31T22:44:29Z",
+          "url": "https://github.com/jjgoings/pfapack/commit/61ae64e6ab7ac7490ddc3e54d9bbc50ee9ec04a7"
+        },
+        "date": 1769106372357,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "c_loop",
+            "value": 0.00037324376000000823,
+            "range": "± 0.000161",
+            "unit": "s",
+            "extra": "min=0.000258 max=0.000851"
+          },
+          {
+            "name": "batched_4d",
+            "value": 0.00007029716999980451,
+            "range": "± 0.000013",
+            "unit": "s",
+            "extra": "min=0.000064 max=0.000145"
           }
         ]
       }
