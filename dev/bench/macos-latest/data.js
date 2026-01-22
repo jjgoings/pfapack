@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1769108017817,
+  "lastUpdate": 1769108030160,
   "repoUrl": "https://github.com/jjgoings/pfapack",
   "entries": {
     "PFAPACK Performance (macos-latest)": [
@@ -818,6 +818,72 @@ window.BENCHMARK_DATA = {
             "name": "phase2_many_small",
             "value": 0.09370094999999878,
             "range": "± 0.00416",
+            "unit": "s",
+            "extra": "outer=65536 n=8"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "3915169+jjgoings@users.noreply.github.com",
+            "name": "jjgoings",
+            "username": "jjgoings"
+          },
+          "committer": {
+            "email": "3915169+jjgoings@users.noreply.github.com",
+            "name": "jjgoings",
+            "username": "jjgoings"
+          },
+          "distinct": true,
+          "id": "5bab67d51a992a6054b43a35b69c3eda4b7031ce",
+          "message": "Add python_loop and batched_3d to historical benchmark script",
+          "timestamp": "2026-01-22T10:51:23-08:00",
+          "tree_id": "4b05a2ad33a97dcf141844beb88a000e07a03508",
+          "url": "https://github.com/jjgoings/pfapack/commit/5bab67d51a992a6054b43a35b69c3eda4b7031ce"
+        },
+        "date": 1769108028752,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "python_loop",
+            "value": 0.0018258166399979813,
+            "range": "± 0.000812",
+            "unit": "s",
+            "extra": "min=0.001456 max=0.006853"
+          },
+          {
+            "name": "c_loop",
+            "value": 0.0003289728600003627,
+            "range": "± 0.001621",
+            "unit": "s",
+            "extra": "min=0.000131 max=0.016362"
+          },
+          {
+            "name": "batched_3d",
+            "value": 0.00002142376999984208,
+            "range": "± 0.000008",
+            "unit": "s",
+            "extra": "min=0.000018 max=0.000093"
+          },
+          {
+            "name": "batched_4d",
+            "value": 0.000025322989998812772,
+            "range": "± 0.000054",
+            "unit": "s",
+            "extra": "min=0.000019 max=0.000562"
+          },
+          {
+            "name": "phase2_tomography",
+            "value": 0.13183695860000172,
+            "range": "± 0.008814",
+            "unit": "s",
+            "extra": "n_sel=32"
+          },
+          {
+            "name": "phase2_many_small",
+            "value": 0.10275852519999944,
+            "range": "± 0.005601",
             "unit": "s",
             "extra": "outer=65536 n=8"
           }
