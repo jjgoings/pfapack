@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1769106390811,
+  "lastUpdate": 1769106400012,
   "repoUrl": "https://github.com/jjgoings/pfapack",
   "entries": {
     "PFAPACK Performance (ubuntu-latest)": [
@@ -440,6 +440,56 @@ window.BENCHMARK_DATA = {
             "name": "phase2_many_small",
             "value": 0.12289232320000565,
             "range": "± 0.000203",
+            "unit": "s",
+            "extra": "outer=65536 n=8"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "3915169+jjgoings@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "3915169+jjgoings@users.noreply.github.com"
+          },
+          "id": "0825d76f7b87c61a84cb00f726782b317df8063b",
+          "message": "Optimize Parlett-Reid factorization: fused division, internal BLAS-1 kernels, batched row swaps",
+          "timestamp": "2026-01-22T05:43:03Z",
+          "url": "https://github.com/jjgoings/pfapack/commit/0825d76f7b87c61a84cb00f726782b317df8063b"
+        },
+        "date": 1769106399219,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "c_loop",
+            "value": 0.0004041499199888676,
+            "range": "± 0.000122",
+            "unit": "s",
+            "extra": "min=0.000311 max=0.000747"
+          },
+          {
+            "name": "batched_4d",
+            "value": 0.000027058730006501718,
+            "range": "± 0.000004",
+            "unit": "s",
+            "extra": "min=0.000026 max=0.000052"
+          },
+          {
+            "name": "phase2_tomography",
+            "value": 0.21778116919999774,
+            "range": "± 0.00339",
+            "unit": "s",
+            "extra": "n_sel=32"
+          },
+          {
+            "name": "phase2_many_small",
+            "value": 0.09313609059997816,
+            "range": "± 0.00101",
             "unit": "s",
             "extra": "outer=65536 n=8"
           }
