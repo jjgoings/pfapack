@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1769107998046,
+  "lastUpdate": 1769108010491,
   "repoUrl": "https://github.com/jjgoings/pfapack",
   "entries": {
     "PFAPACK Performance (ubuntu-latest)": [
@@ -834,6 +834,56 @@ window.BENCHMARK_DATA = {
             "range": "± 0.001051",
             "unit": "s",
             "extra": "outer=65536 n=8"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "jjgoings@gmail.com"
+          },
+          "committer": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "jjgoings@gmail.com"
+          },
+          "id": "a028f71f3aca3907d0a2421d4929f13f9596b43d",
+          "message": "work with complex128 in interleaved fashion",
+          "timestamp": "2024-11-23T00:23:03Z",
+          "url": "https://github.com/jjgoings/pfapack/commit/a028f71f3aca3907d0a2421d4929f13f9596b43d"
+        },
+        "date": 1769108010196,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "python_loop",
+            "value": 0.0031667720000007195,
+            "range": "± 0.000193",
+            "unit": "s",
+            "extra": "min=0.003041 max=0.003989"
+          },
+          {
+            "name": "c_loop",
+            "value": 0.0002757891199991036,
+            "range": "± 0.00004",
+            "unit": "s",
+            "extra": "min=0.000254 max=0.000521"
+          },
+          {
+            "name": "batched_3d",
+            "value": 0.00006119458000014788,
+            "range": "± 0.000008",
+            "unit": "s",
+            "extra": "min=0.000057 max=0.000112"
+          },
+          {
+            "name": "batched_4d",
+            "value": 0.0000686113500000829,
+            "range": "± 0.000011",
+            "unit": "s",
+            "extra": "min=0.000064 max=0.000163"
           }
         ]
       }
