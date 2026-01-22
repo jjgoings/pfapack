@@ -1,10 +1,19 @@
 name: Build and Test
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      benchmark_ref:
+        description: 'Git ref (commit SHA) to benchmark'
+        required: false
+        default: ''
 
 jobs:
   build_and_test:
     runs-on: ${{ matrix.os }}
+    if: github.event.inputs.benchmark_ref == '' || github.event.inputs.benchmark_ref == null
     strategy:
       fail-fast: false
       matrix:
@@ -47,13 +56,19 @@ jobs:
   benchmark:
     runs-on: ${{ matrix.os }}
     needs: build_and_test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: |
+      always() &&
+      (needs.build_and_test.result == 'success' || needs.build_and_test.result == 'skipped') &&
+      ((github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+       (github.event_name == 'workflow_dispatch'))
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.inputs.benchmark_ref || github.sha }}
 
     - name: Set up Python
       uses: actions/setup-python@v5
