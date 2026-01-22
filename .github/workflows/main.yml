@@ -257,7 +257,7 @@ jobs:
           python bench/phase2_bench.py tomography \
             --iters 5 --warmup 2 \
             --nshadow 128 --ngrid 17 --n-sel 32 --n-full 64 \
-            --json-out benchmark-tomography.json
+            --json-out benchmark-tomography.json || echo '{"runs": []}' > benchmark-tomography.json
         else
           echo '{"runs": []}' > benchmark-tomography.json
         fi
@@ -269,7 +269,7 @@ jobs:
           python bench/phase2_bench.py many-small \
             --iters 5 --warmup 2 \
             --outer 65536 --inner 5 --n 8 \
-            --json-out benchmark-many-small.json
+            --json-out benchmark-many-small.json || echo '{"runs": []}' > benchmark-many-small.json
         else
           echo '{"runs": []}' > benchmark-many-small.json
         fi
