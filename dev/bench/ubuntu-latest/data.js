@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1769106382357,
+  "lastUpdate": 1769106390811,
   "repoUrl": "https://github.com/jjgoings/pfapack",
   "entries": {
     "PFAPACK Performance (ubuntu-latest)": [
@@ -390,6 +390,56 @@ window.BENCHMARK_DATA = {
             "name": "phase2_many_small",
             "value": 0.15187026360000289,
             "range": "± 0.000125",
+            "unit": "s",
+            "extra": "outer=65536 n=8"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "3915169+jjgoings@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "3915169+jjgoings@users.noreply.github.com"
+          },
+          "id": "d0ba699e9590f449c1558fafea069de77c4e9991",
+          "message": "Optimize batched Pfaffian: workspace reuse, transpose elimination, consistent singular handling",
+          "timestamp": "2026-01-21T21:29:33Z",
+          "url": "https://github.com/jjgoings/pfapack/commit/d0ba699e9590f449c1558fafea069de77c4e9991"
+        },
+        "date": 1769106390408,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "c_loop",
+            "value": 0.00036017995999898744,
+            "range": "± 0.000043",
+            "unit": "s",
+            "extra": "min=0.000319 max=0.000685"
+          },
+          {
+            "name": "batched_4d",
+            "value": 0.00003249511000049665,
+            "range": "± 0.000004",
+            "unit": "s",
+            "extra": "min=0.000031 max=0.000064"
+          },
+          {
+            "name": "phase2_tomography",
+            "value": 0.2306721485999958,
+            "range": "± 0.001168",
+            "unit": "s",
+            "extra": "n_sel=32"
+          },
+          {
+            "name": "phase2_many_small",
+            "value": 0.12289232320000565,
+            "range": "± 0.000203",
             "unit": "s",
             "extra": "outer=65536 n=8"
           }
