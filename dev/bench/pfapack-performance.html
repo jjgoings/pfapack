@@ -14,9 +14,11 @@
         :root {
             --ubuntu-color: #3b82f6;
             --ubuntu-color-light: rgba(59, 130, 246, 0.15);
+            --ubuntu-color-muted: rgba(59, 130, 246, 0.4);
             --ubuntu-error: #1d4ed8;
             --macos-color: #ef4444;
             --macos-color-light: rgba(239, 68, 68, 0.15);
+            --macos-color-muted: rgba(239, 68, 68, 0.4);
             --macos-error: #b91c1c;
             --bg-primary: #0f172a;
             --bg-secondary: #1e293b;
@@ -74,22 +76,43 @@
         .legend-bar {
             display: flex;
             justify-content: center;
-            gap: 2rem;
+            gap: 1rem;
             margin-top: 1.5rem;
         }
 
-        .legend-item {
+        .legend-btn {
             display: flex;
             align-items: center;
             gap: 0.5rem;
             font-size: 0.9rem;
-            color: var(--text-secondary);
+            color: var(--text-primary);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .legend-btn:hover {
+            border-color: var(--text-muted);
+        }
+
+        .legend-btn.inactive {
+            opacity: 0.4;
+            background: transparent;
+        }
+
+        .legend-btn.inactive .legend-dot {
+            background: var(--text-muted) !important;
         }
 
         .legend-dot {
             width: 12px;
             height: 12px;
             border-radius: 50%;
+            transition: background 0.2s ease;
         }
 
         .legend-dot.ubuntu { background: var(--ubuntu-color); }
@@ -120,6 +143,14 @@
             margin-bottom: 1rem;
             padding-bottom: 1rem;
             border-bottom: 1px solid var(--border-color);
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .chart-header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
         }
 
         .chart-title {
@@ -136,6 +167,37 @@
             background: var(--bg-primary);
             color: var(--text-muted);
             font-weight: 500;
+        }
+
+        .chart-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0.35rem 0.6rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-family: inherit;
+        }
+
+        .action-btn:hover {
+            color: var(--text-primary);
+            border-color: var(--text-muted);
+            background: var(--bg-secondary);
+        }
+
+        .action-btn svg {
+            width: 14px;
+            height: 14px;
         }
 
         .chart-wrapper {
@@ -189,6 +251,8 @@
             h1 { font-size: 1.75rem; }
             .legend-bar { flex-direction: column; gap: 0.5rem; align-items: center; }
             .chart-wrapper { height: 250px; }
+            .chart-header { flex-direction: column; align-items: flex-start; }
+            .chart-actions { margin-top: 0.5rem; }
         }
     </style>
 </head>
@@ -198,14 +262,14 @@
             <h1>PFAPACK Performance Benchmarks</h1>
             <p class="subtitle">Pfaffian computation timings across platforms with 95% confidence intervals</p>
             <div class="legend-bar">
-                <div class="legend-item">
+                <button class="legend-btn" id="toggle-ubuntu" onclick="togglePlatform('ubuntu')">
                     <span class="legend-dot ubuntu"></span>
                     <span>Ubuntu (Linux)</span>
-                </div>
-                <div class="legend-item">
+                </button>
+                <button class="legend-btn" id="toggle-macos" onclick="togglePlatform('macos')">
                     <span class="legend-dot macos"></span>
                     <span>macOS (Apple Silicon)</span>
-                </div>
+                </button>
             </div>
         </header>
 
@@ -243,6 +307,11 @@
         'phase2_many_small': 'Many small matrices workload'
     };
 
+    // Global state
+    const charts = [];
+    const chartData = {};
+    const platformVisible = { ubuntu: true, macos: true };
+
     async function loadData(platform) {
         return new Promise((resolve, reject) => {
             const script = document.createElement('script');
@@ -271,13 +340,11 @@
         const ubuntuEntries = Object.values(ubuntuData.entries)[0] || [];
         const macosEntries = Object.values(macosData.entries)[0] || [];
 
-        // Build commit order from ubuntu (primary)
         const commitOrder = {};
         ubuntuEntries.forEach((entry, idx) => {
             commitOrder[entry.commit.id.slice(0, 7)] = idx;
         });
 
-        // Also add any macos-only commits
         macosEntries.forEach((entry, idx) => {
             const short = entry.commit.id.slice(0, 7);
             if (!(short in commitOrder)) {
@@ -326,7 +393,6 @@
         processEntries(ubuntuEntries, 'ubuntu');
         processEntries(macosEntries, 'macos');
 
-        // Convert to sorted arrays
         const result = {};
         for (const [name, platforms] of Object.entries(benchmarks)) {
             result[name] = {
@@ -349,12 +415,82 @@
         }
     }
 
+    function togglePlatform(platform) {
+        platformVisible[platform] = !platformVisible[platform];
+
+        const btn = document.getElementById(`toggle-${platform}`);
+        btn.classList.toggle('inactive', !platformVisible[platform]);
+
+        charts.forEach(({ chart, name }) => {
+            const datasetIndex = platform === 'ubuntu' ? 0 : 1;
+            if (chart.data.datasets[datasetIndex]) {
+                chart.data.datasets[datasetIndex].hidden = !platformVisible[platform];
+                chart.update('none');
+            }
+        });
+    }
+
+    function downloadPNG(name) {
+        const chartObj = charts.find(c => c.name === name);
+        if (!chartObj) return;
+
+        const link = document.createElement('a');
+        link.download = `pfapack-${name}.png`;
+        link.href = chartObj.chart.toBase64Image('image/png', 1);
+        link.click();
+    }
+
+    function downloadCSV(name) {
+        const data = chartData[name];
+        if (!data) return;
+
+        const allCommits = new Map();
+        data.ubuntu.forEach(d => allCommits.set(d.commit, d));
+        data.macos.forEach(d => { if (!allCommits.has(d.commit)) allCommits.set(d.commit, d); });
+        const sortedCommits = Array.from(allCommits.values()).sort((a, b) => a.order - b.order);
+
+        const ubuntuMap = new Map(data.ubuntu.map(d => [d.commit, d]));
+        const macosMap = new Map(data.macos.map(d => [d.commit, d]));
+
+        let csv = 'commit,message,ubuntu_mean_s,ubuntu_stddev_s,ubuntu_min_s,ubuntu_max_s,macos_mean_s,macos_stddev_s,macos_min_s,macos_max_s\n';
+
+        sortedCommits.forEach(info => {
+            const u = ubuntuMap.get(info.commit);
+            const m = macosMap.get(info.commit);
+            const row = [
+                info.commit,
+                `"${info.message.replace(/"/g, '""')}"`,
+                u ? u.value : '',
+                u ? u.stddev : '',
+                u && u.min !== null ? u.min : '',
+                u && u.max !== null ? u.max : '',
+                m ? m.value : '',
+                m ? m.stddev : '',
+                m && m.min !== null ? m.min : '',
+                m && m.max !== null ? m.max : '',
+            ];
+            csv += row.join(',') + '\n';
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const link = document.createElement('a');
+        link.download = `pfapack-${name}.csv`;
+        link.href = URL.createObjectURL(blob);
+        link.click();
+        URL.revokeObjectURL(link.href);
+    }
+
     function createChart(container, name, data) {
+        chartData[name] = data;
+
         const card = document.createElement('div');
         card.className = 'chart-card';
 
         const header = document.createElement('div');
         header.className = 'chart-header';
+
+        const headerLeft = document.createElement('div');
+        headerLeft.className = 'chart-header-left';
 
         const title = document.createElement('span');
         title.className = 'chart-title';
@@ -364,8 +500,27 @@
         badge.className = 'chart-badge';
         badge.textContent = BENCHMARK_DESCRIPTIONS[name] || 'Benchmark';
 
-        header.appendChild(title);
-        header.appendChild(badge);
+        headerLeft.appendChild(title);
+        headerLeft.appendChild(badge);
+
+        const actions = document.createElement('div');
+        actions.className = 'chart-actions';
+
+        const pngBtn = document.createElement('button');
+        pngBtn.className = 'action-btn';
+        pngBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>PNG`;
+        pngBtn.onclick = () => downloadPNG(name);
+
+        const csvBtn = document.createElement('button');
+        csvBtn.className = 'action-btn';
+        csvBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>CSV`;
+        csvBtn.onclick = () => downloadCSV(name);
+
+        actions.appendChild(pngBtn);
+        actions.appendChild(csvBtn);
+
+        header.appendChild(headerLeft);
+        header.appendChild(actions);
 
         const wrapper = document.createElement('div');
         wrapper.className = 'chart-wrapper';
@@ -377,14 +532,12 @@
         card.appendChild(wrapper);
         container.appendChild(card);
 
-        // Merge commit labels from both platforms
         const allCommits = new Map();
         data.ubuntu.forEach(d => allCommits.set(d.commit, d));
         data.macos.forEach(d => { if (!allCommits.has(d.commit)) allCommits.set(d.commit, d); });
         const sortedCommits = Array.from(allCommits.values()).sort((a, b) => a.order - b.order);
         const labels = sortedCommits.map(d => d.commit);
 
-        // Create lookup maps
         const ubuntuMap = new Map(data.ubuntu.map(d => [d.commit, d]));
         const macosMap = new Map(data.macos.map(d => [d.commit, d]));
 
@@ -407,6 +560,7 @@
                 borderWidth: 2,
                 tension: 0.1,
                 spanGaps: true,
+                hidden: !platformVisible.ubuntu,
             });
         }
 
@@ -427,10 +581,11 @@
                 borderWidth: 2,
                 tension: 0.1,
                 spanGaps: true,
+                hidden: !platformVisible.macos,
             });
         }
 
-        new Chart(canvas, {
+        const chart = new Chart(canvas, {
             type: 'lineWithErrorBars',
             data: { labels, datasets },
             options: {
@@ -506,6 +661,8 @@
                 }
             }
         });
+
+        charts.push({ chart, name });
     }
 
     async function main() {
@@ -521,7 +678,6 @@
 
             container.innerHTML = '';
 
-            // Order benchmarks logically
             const benchOrder = ['python_loop', 'c_loop', 'batched_3d', 'batched_4d', 'phase2_tomography', 'phase2_many_small'];
             const sortedNames = Object.keys(benchmarks).sort((a, b) => {
                 const ai = benchOrder.indexOf(a);
