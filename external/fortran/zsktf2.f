@@ -172,8 +172,8 @@
       EXTERNAL           LSAME, IZAMAX_U1
 *     ..
 *     .. External Subroutines ..
-      EXTERNAL           ZSCAL_U1, ZSWAP_U1, ZNEG_U1, ZSKR2_U1, ZSKR2_L1,
-     $                   ZSWAP, ZSCAL, XERBLA
+      EXTERNAL           ZSCAL_U1, ZSWAP_U1, ZSKR2_U1, ZSKR2_L1,
+     $                   ZSWAPNEG_MIX, ZSWAP, XERBLA
 *     ..
 *     .. Intrinsic Functions ..
       INTRINSIC          ABS, MAX, SQRT
@@ -237,13 +237,12 @@
 
                IF( KP .NE. KK ) THEN
                   CALL ZSWAP_U1( KP-1, A( 1, KK ), A( 1, KP ))
-                  CALL ZSWAP( KK-KP-1, A( KP+1, KK ), 1,
+*     Fused swap-negate on middle band: replaces ZSWAP+ZNEG+ZSCAL
+                  CALL ZSWAPNEG_MIX( KK-KP-1, A( KP+1, KK ),
      $                 A( KP, KP+1 ), LDA )
+                  A(KP, KK) = -A(KP, KK)
 
                   CALL ZSWAP( N-K+1, A( KK, K), LDA, A( KP, K), LDA)
-
-                  CALL ZNEG_U1(KK-KP, A(KP, KK))
-                  CALL ZSCAL(KK-KP-1, -ONE, A(KP, KP+1), LDA)
                END IF
 
 *     Update the leading submatrix A(1:K-2, 1:K-2) in a rank 2 update
@@ -292,13 +291,12 @@
      $                    A( KP+1, KP ) )
                   END IF
 
-                  CALL ZSWAP( KP-KK-1, A( KK+1, KK ), 1,
+*     Fused swap-negate on middle band: replaces ZSWAP+ZNEG+ZSCAL
+                  CALL ZSWAPNEG_MIX( KP-KK-1, A( KK+1, KK ),
      $                 A( KP, KK+1 ), LDA )
+                  A(KP, KK) = -A(KP, KK)
 
                   CALL ZSWAP( K, A( KK, 1), LDA, A( KP, 1), LDA)
-
-                  CALL ZNEG_U1(KP-KK, A(KK+1, KK))
-                  CALL ZSCAL(KP-KK-1, -ONE, A(KP, KK+1), LDA)
                END IF
 
 *     Update the trailing submatrix A(K+2:N, K+2:N) in a rank 2 update

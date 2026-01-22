@@ -357,3 +357,21 @@
    10 CONTINUE
       RETURN
       END
+
+      SUBROUTINE DSWAPNEG_MIX(M, X, Y, LDY)
+*     Internal: fused swap-and-negate for mixed stride vectors
+*     X is unit-stride column segment of length M
+*     Y is strided row segment with stride LDY
+*     Result: X(i) <- -Y(1+(i-1)*LDY), Y(1+(i-1)*LDY) <- -X(i)_old
+      INTEGER M, LDY, I, IY
+      DOUBLE PRECISION X(*), Y(*), T
+      IF (M.LE.0) RETURN
+      IY = 1
+      DO 10 I = 1, M
+          T = X(I)
+          X(I) = -Y(IY)
+          Y(IY) = -T
+          IY = IY + LDY
+   10 CONTINUE
+      RETURN
+      END

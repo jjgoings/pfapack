@@ -170,8 +170,8 @@
       EXTERNAL           LSAME, IDAMAX_U1
 *     ..
 *     .. External Subroutines ..
-      EXTERNAL           DSCAL_U1, DSWAP_U1, DNEG_U1, DSKR2_U1, DSKR2_L1,
-     $                   DSWAP, DSCAL, XERBLA
+      EXTERNAL           DSCAL_U1, DSWAP_U1, DSKR2_U1, DSKR2_L1,
+     $                   DSWAPNEG_MIX, DSWAP, XERBLA
 *     ..
 *     .. Intrinsic Functions ..
       INTRINSIC          ABS, MAX
@@ -235,13 +235,12 @@
 
                IF( KP .NE. KK ) THEN
                   CALL DSWAP_U1( KP-1, A( 1, KK ), A( 1, KP ))
-                  CALL DSWAP( KK-KP-1, A( KP+1, KK ), 1,
+*     Fused swap-negate on middle band: replaces DSWAP+DNEG+DSCAL
+                  CALL DSWAPNEG_MIX( KK-KP-1, A( KP+1, KK ),
      $                 A( KP, KP+1 ), LDA )
+                  A(KP, KK) = -A(KP, KK)
 
                   CALL DSWAP( N-K+1, A( KK, K), LDA, A( KP, K), LDA)
-
-                  CALL DNEG_U1(KK-KP, A(KP, KK))
-                  CALL DSCAL(KK-KP-1, -ONE, A(KP, KP+1), LDA)
                END IF
 
 *     Update the leading submatrix A(1:K-2, 1:K-2) in a rank 2 update
@@ -290,13 +289,12 @@
      $                    A( KP+1, KP ) )
                   END IF
 
-                  CALL DSWAP( KP-KK-1, A( KK+1, KK ), 1,
+*     Fused swap-negate on middle band: replaces DSWAP+DNEG+DSCAL
+                  CALL DSWAPNEG_MIX( KP-KK-1, A( KK+1, KK ),
      $                 A( KP, KK+1 ), LDA )
+                  A(KP, KK) = -A(KP, KK)
 
                   CALL DSWAP( K, A( KK, 1), LDA, A( KP, 1), LDA)
-
-                  CALL DNEG_U1(KP-KK, A(KK+1, KK))
-                  CALL DSCAL(KP-KK-1, -ONE, A(KP, KK+1), LDA)
                END IF
 
 *     Update the trailing submatrix A(K+2:N, K+2:N) in a rank 2 update
