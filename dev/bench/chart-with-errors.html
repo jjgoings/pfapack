@@ -6,14 +6,16 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-error-bars@3"></script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 20px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 20px; background: #fafafa; }
         h1 { color: #333; }
-        .chart-container { width: 100%; max-width: 900px; margin: 20px 0; }
+        h2 { color: #555; border-bottom: 1px solid #ddd; padding-bottom: 8px; }
+        .chart-container { width: 100%; max-width: 900px; margin: 20px 0; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .platform-section { margin-bottom: 40px; }
     </style>
 </head>
 <body>
     <h1>PFAPACK Performance Benchmarks (with 95% CI)</h1>
+    <p>Hover over points to see commit message and timing details.</p>
     <div id="charts"></div>
     
     <script>
@@ -31,23 +33,25 @@
         
         entries.forEach(entry => {
             const commit = entry.commit.id.slice(0, 7);
+            const message = entry.commit.message.split('\n')[0].slice(0, 60);
+            
             entry.benches.forEach(bench => {
                 if (!benchmarks[bench.name]) benchmarks[bench.name] = [];
                 
-                // Parse range like "± 0.000413"
                 let stddev = 0;
                 if (bench.range) {
-                    const match = bench.range.match(/±?\s*([\d.]+)/);
+                    const match = bench.range.match(/±?\s*([\d.eE+-]+)/);
                     if (match) stddev = parseFloat(match[1]);
                 }
                 
-                // 95% CI = 1.96 * stddev
                 const ci95 = 1.96 * stddev;
                 
                 benchmarks[bench.name].push({
                     commit,
+                    message,
                     value: bench.value,
-                    yMin: bench.value - ci95,
+                    stddev,
+                    yMin: Math.max(0, bench.value - ci95),
                     yMax: bench.value + ci95
                 });
             });
@@ -78,24 +82,50 @@
                     errorBarColor: '#c0392b',
                     errorBarWhiskerColor: '#c0392b',
                     errorBarWhiskerSize: 5,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
                 }]
             },
             options: {
                 responsive: true,
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
                 plugins: {
-                    title: { display: true, text: name },
+                    title: { display: true, text: name, font: { size: 16 } },
                     tooltip: {
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        titleFont: { size: 14 },
+                        bodyFont: { size: 13 },
+                        padding: 12,
                         callbacks: {
+                            title: (ctx) => {
+                                const d = data[ctx[0].dataIndex];
+                                return `${d.commit}: ${d.message}`;
+                            },
                             label: (ctx) => {
                                 const d = data[ctx.dataIndex];
-                                return `${(d.value*1000).toFixed(3)} ms ± ${((d.yMax-d.value)*1000).toFixed(3)} ms (95% CI)`;
+                                const ms = d.value * 1000;
+                                const ci = (d.yMax - d.value) * 1000;
+                                if (ms > 1) {
+                                    return `${ms.toFixed(2)} ms ± ${ci.toFixed(2)} ms (95% CI)`;
+                                } else {
+                                    return `${(ms*1000).toFixed(1)} µs ± ${(ci*1000).toFixed(1)} µs (95% CI)`;
+                                }
                             }
                         }
                     }
                 },
                 scales: {
-                    x: { title: { display: true, text: 'commit' } },
-                    y: { title: { display: true, text: 'time (s)' }, beginAtZero: true }
+                    x: { 
+                        title: { display: true, text: 'commit' },
+                        ticks: { maxRotation: 45 }
+                    },
+                    y: { 
+                        title: { display: true, text: 'time (s)' }, 
+                        beginAtZero: true 
+                    }
                 }
             }
         });
