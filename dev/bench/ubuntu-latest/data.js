@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1769105480529,
+  "lastUpdate": 1769105976088,
   "repoUrl": "https://github.com/jjgoings/pfapack",
   "entries": {
     "PFAPACK Performance (ubuntu-latest)": [
@@ -314,6 +314,58 @@ window.BENCHMARK_DATA = {
             "name": "phase2_many_small",
             "value": 0.09587984219999726,
             "range": "± 0.000144",
+            "unit": "s",
+            "extra": "outer=65536 n=8"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "3915169+jjgoings@users.noreply.github.com",
+            "name": "jjgoings",
+            "username": "jjgoings"
+          },
+          "committer": {
+            "email": "3915169+jjgoings@users.noreply.github.com",
+            "name": "jjgoings",
+            "username": "jjgoings"
+          },
+          "distinct": true,
+          "id": "c6109b669c31c32fe474f000c7a2c764357f57e8",
+          "message": "Fix checkout for historical commits: need full fetch depth for SHA refs",
+          "timestamp": "2026-01-22T10:16:47-08:00",
+          "tree_id": "dc7af4b63ecc851d8a122b9a325f13b2cdc5dd2f",
+          "url": "https://github.com/jjgoings/pfapack/commit/c6109b669c31c32fe474f000c7a2c764357f57e8"
+        },
+        "date": 1769105975312,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "c_loop",
+            "value": 0.0003524494100005882,
+            "range": "± 0.000037",
+            "unit": "s",
+            "extra": "min=0.000314 max=0.000626"
+          },
+          {
+            "name": "batched_4d",
+            "value": 0.00002890188000009175,
+            "range": "± 0.000005",
+            "unit": "s",
+            "extra": "min=0.000027 max=0.000060"
+          },
+          {
+            "name": "phase2_tomography",
+            "value": 0.23059944540000288,
+            "range": "± 0.001737",
+            "unit": "s",
+            "extra": "n_sel=32"
+          },
+          {
+            "name": "phase2_many_small",
+            "value": 0.09603271340000105,
+            "range": "± 0.00029",
             "unit": "s",
             "extra": "outer=65536 n=8"
           }
