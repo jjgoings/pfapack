@@ -20,36 +20,43 @@ window.BENCHMARK_DATA = {
           "timestamp": "2024-07-31T22:44:29Z",
           "url": "https://github.com/jjgoings/pfapack/commit/61ae64e6ab7ac7490ddc3e54d9bbc50ee9ec04a7"
         },
-        "date": 1769107967162,
+        "date": 1769109989801,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
             "name": "python_loop",
-            "value": 0.0030682402300003277,
-            "range": "± 0.000227",
+            "value": 0.003088310039999982,
+            "range": "\u00b1 0.000048",
             "unit": "s",
-            "extra": "min=0.002992 max=0.005241"
+            "extra": "min=0.003043 max=0.003435"
           },
           {
             "name": "c_loop",
-            "value": 0.00028028654999999957,
-            "range": "± 0.000033",
+            "value": 0.00030465313999940237,
+            "range": "\u00b1 0.000034",
             "unit": "s",
-            "extra": "min=0.000263 max=0.000534"
+            "extra": "min=0.000282 max=0.000510"
           },
           {
             "name": "batched_3d",
-            "value": 0.00006282981000026667,
-            "range": "± 0.000008",
+            "value": 6.0966549999648125e-05,
+            "range": "\u00b1 0.000007",
             "unit": "s",
-            "extra": "min=0.000058 max=0.000109"
+            "extra": "min=0.000058 max=0.000110"
           },
           {
             "name": "batched_4d",
-            "value": 0.00007072177999972951,
-            "range": "± 0.000014",
+            "value": 6.735028999955262e-05,
+            "range": "\u00b1 0.000009",
             "unit": "s",
-            "extra": "min=0.000064 max=0.000172"
+            "extra": "min=0.000063 max=0.000138"
+          },
+          {
+            "name": "phase2_many_small",
+            "value": 0.5643701415999999,
+            "range": "\u00b1 0.007458",
+            "unit": "s",
+            "extra": "outer=65536 n=8"
           }
         ]
       },
@@ -70,36 +77,43 @@ window.BENCHMARK_DATA = {
           "timestamp": "2024-10-31T22:00:19Z",
           "url": "https://github.com/jjgoings/pfapack/commit/0761f01bb615a85b46895d14417e9dfdee838bc4"
         },
-        "date": 1769107971215,
+        "date": 1769109987394,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
             "name": "python_loop",
-            "value": 0.0030618643799985535,
-            "range": "± 0.00013",
+            "value": 0.0030536386199997876,
+            "range": "\u00b1 0.000055",
             "unit": "s",
-            "extra": "min=0.002994 max=0.003891"
+            "extra": "min=0.002996 max=0.003415"
           },
           {
             "name": "c_loop",
-            "value": 0.0002752286600002662,
-            "range": "± 0.000032",
+            "value": 0.0002768835699995975,
+            "range": "\u00b1 0.000033",
             "unit": "s",
-            "extra": "min=0.000258 max=0.000497"
+            "extra": "min=0.000261 max=0.000510"
           },
           {
             "name": "batched_3d",
-            "value": 0.00008460333000101628,
-            "range": "± 0.000017",
+            "value": 5.877076000018633e-05,
+            "range": "\u00b1 0.000006",
             "unit": "s",
-            "extra": "min=0.000076 max=0.000156"
+            "extra": "min=0.000056 max=0.000105"
           },
           {
             "name": "batched_4d",
-            "value": 0.0000892349099973444,
-            "range": "± 0.000013",
+            "value": 6.568734000026665e-05,
+            "range": "\u00b1 0.00001",
             "unit": "s",
-            "extra": "min=0.000082 max=0.000159"
+            "extra": "min=0.000062 max=0.000149"
+          },
+          {
+            "name": "phase2_many_small",
+            "value": 0.5343886623999993,
+            "range": "\u00b1 0.00281",
+            "unit": "s",
+            "extra": "outer=65536 n=8"
           }
         ]
       },
@@ -120,36 +134,43 @@ window.BENCHMARK_DATA = {
           "timestamp": "2024-11-23T00:23:03Z",
           "url": "https://github.com/jjgoings/pfapack/commit/a028f71f3aca3907d0a2421d4929f13f9596b43d"
         },
-        "date": 1769108010196,
+        "date": 1769109984568,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
             "name": "python_loop",
-            "value": 0.0031667720000007195,
-            "range": "± 0.000193",
+            "value": 0.003079936769999847,
+            "range": "\u00b1 0.000078",
             "unit": "s",
-            "extra": "min=0.003041 max=0.003989"
+            "extra": "min=0.002997 max=0.003522"
           },
           {
             "name": "c_loop",
-            "value": 0.0002757891199991036,
-            "range": "± 0.00004",
+            "value": 0.00027456968000024064,
+            "range": "\u00b1 0.00003",
             "unit": "s",
-            "extra": "min=0.000254 max=0.000521"
+            "extra": "min=0.000258 max=0.000486"
           },
           {
             "name": "batched_3d",
-            "value": 0.00006119458000014788,
-            "range": "± 0.000008",
+            "value": 6.051457000182836e-05,
+            "range": "\u00b1 0.000006",
             "unit": "s",
-            "extra": "min=0.000057 max=0.000112"
+            "extra": "min=0.000058 max=0.000101"
           },
           {
             "name": "batched_4d",
-            "value": 0.0000686113500000829,
-            "range": "± 0.000011",
+            "value": 6.685340000046835e-05,
+            "range": "\u00b1 0.000009",
             "unit": "s",
-            "extra": "min=0.000064 max=0.000163"
+            "extra": "min=0.000063 max=0.000139"
+          },
+          {
+            "name": "phase2_many_small",
+            "value": 0.5343145090000064,
+            "range": "\u00b1 0.004478",
+            "unit": "s",
+            "extra": "outer=65536 n=8"
           }
         ]
       },
@@ -170,36 +191,43 @@ window.BENCHMARK_DATA = {
           "timestamp": "2024-11-26T19:40:52Z",
           "url": "https://github.com/jjgoings/pfapack/commit/7d310f121649f62c253bc07b9632cbd8492ec513"
         },
-        "date": 1769107984762,
+        "date": 1769109989516,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
             "name": "python_loop",
-            "value": 0.003179353549999746,
-            "range": "± 0.000429",
+            "value": 0.003112745819998395,
+            "range": "\u00b1 0.000081",
             "unit": "s",
-            "extra": "min=0.003014 max=0.005818"
+            "extra": "min=0.003051 max=0.003704"
           },
           {
             "name": "c_loop",
-            "value": 0.00035066485999692533,
-            "range": "± 0.00004",
+            "value": 0.00033658400000120993,
+            "range": "\u00b1 0.000033",
             "unit": "s",
-            "extra": "min=0.000325 max=0.000602"
+            "extra": "min=0.000318 max=0.000601"
           },
           {
             "name": "batched_3d",
-            "value": 0.000051926429998445654,
-            "range": "± 0.000004",
+            "value": 3.386707999993632e-05,
+            "range": "\u00b1 0.000004",
             "unit": "s",
-            "extra": "min=0.000050 max=0.000075"
+            "extra": "min=0.000033 max=0.000060"
           },
           {
             "name": "batched_4d",
-            "value": 0.00008660581999947681,
-            "range": "± 0.000013",
+            "value": 6.697248999898875e-05,
+            "range": "\u00b1 0.00001",
             "unit": "s",
-            "extra": "min=0.000080 max=0.000179"
+            "extra": "min=0.000062 max=0.000140"
+          },
+          {
+            "name": "phase2_many_small",
+            "value": 0.572861564599998,
+            "range": "\u00b1 0.009292",
+            "unit": "s",
+            "extra": "outer=65536 n=8"
           }
         ]
       },
@@ -228,42 +256,42 @@ window.BENCHMARK_DATA = {
           {
             "name": "python_loop",
             "value": 0.003696938382812598,
-            "range": "± 0.000413",
+            "range": "\u00b1 0.000413",
             "unit": "s",
             "extra": "min=0.003551 max=0.007884"
           },
           {
             "name": "c_loop",
             "value": 0.0006400404788734634,
-            "range": "± 0.000337",
+            "range": "\u00b1 0.000337",
             "unit": "s",
             "extra": "min=0.000591 max=0.011896"
           },
           {
             "name": "batched_3d",
-            "value": 0.00008303651291198309,
-            "range": "± 0.000016",
+            "value": 8.303651291198309e-05,
+            "range": "\u00b1 0.000016",
             "unit": "s",
             "extra": "min=0.000077 max=0.000215"
           },
           {
             "name": "batched_4d",
-            "value": 0.000022640001137531208,
-            "range": "± 0.000006",
+            "value": 2.2640001137531208e-05,
+            "range": "\u00b1 0.000006",
             "unit": "s",
             "extra": "min=0.000021 max=0.000133"
           },
           {
             "name": "phase2_tomography",
             "value": 0.23156770020000012,
-            "range": "± 0.002836",
+            "range": "\u00b1 0.002836",
             "unit": "s",
             "extra": "n_sel=32"
           },
           {
             "name": "phase2_many_small",
             "value": 0.124480033399999,
-            "range": "± 0.000148",
+            "range": "\u00b1 0.000148",
             "unit": "s",
             "extra": "outer=65536 n=8"
           }
@@ -294,42 +322,42 @@ window.BENCHMARK_DATA = {
           {
             "name": "python_loop",
             "value": 0.003730990164659505,
-            "range": "± 0.000162",
+            "range": "\u00b1 0.000162",
             "unit": "s",
             "extra": "min=0.003654 max=0.006131"
           },
           {
             "name": "c_loop",
             "value": 0.0006349760974981553,
-            "range": "± 0.000351",
+            "range": "\u00b1 0.000351",
             "unit": "s",
             "extra": "min=0.000582 max=0.012367"
           },
           {
             "name": "batched_3d",
-            "value": 0.000085017518208085,
-            "range": "± 0.000018",
+            "value": 8.5017518208085e-05,
+            "range": "\u00b1 0.000018",
             "unit": "s",
             "extra": "min=0.000078 max=0.000334"
           },
           {
             "name": "batched_4d",
-            "value": 0.000022845820713504267,
-            "range": "± 0.000006",
+            "value": 2.2845820713504267e-05,
+            "range": "\u00b1 0.000006",
             "unit": "s",
             "extra": "min=0.000022 max=0.000131"
           },
           {
             "name": "phase2_tomography",
             "value": 0.23107453680000845,
-            "range": "± 0.002768",
+            "range": "\u00b1 0.002768",
             "unit": "s",
             "extra": "n_sel=32"
           },
           {
             "name": "phase2_many_small",
             "value": 0.12332988599999908,
-            "range": "± 0.000568",
+            "range": "\u00b1 0.000568",
             "unit": "s",
             "extra": "outer=65536 n=8"
           }
@@ -358,42 +386,42 @@ window.BENCHMARK_DATA = {
           {
             "name": "python_loop",
             "value": 0.0030619436999975848,
-            "range": "± 0.00005",
+            "range": "\u00b1 0.00005",
             "unit": "s",
             "extra": "min=0.003021 max=0.003443"
           },
           {
             "name": "c_loop",
             "value": 0.00033366439999952033,
-            "range": "± 0.000032",
+            "range": "\u00b1 0.000032",
             "unit": "s",
             "extra": "min=0.000315 max=0.000562"
           },
           {
             "name": "batched_3d",
-            "value": 0.00003347525000066298,
-            "range": "± 0.000008",
+            "value": 3.347525000066298e-05,
+            "range": "\u00b1 0.000008",
             "unit": "s",
             "extra": "min=0.000031 max=0.000103"
           },
           {
             "name": "batched_4d",
-            "value": 0.000033128350000311,
-            "range": "± 0.000006",
+            "value": 3.3128350000311e-05,
+            "range": "\u00b1 0.000006",
             "unit": "s",
             "extra": "min=0.000031 max=0.000072"
           },
           {
             "name": "phase2_tomography",
             "value": 0.23955356100000813,
-            "range": "± 0.003638",
+            "range": "\u00b1 0.003638",
             "unit": "s",
             "extra": "n_sel=32"
           },
           {
             "name": "phase2_many_small",
             "value": 0.1518573751999952,
-            "range": "± 0.000233",
+            "range": "\u00b1 0.000233",
             "unit": "s",
             "extra": "outer=65536 n=8"
           }
@@ -422,42 +450,42 @@ window.BENCHMARK_DATA = {
           {
             "name": "python_loop",
             "value": 0.0030832933100002433,
-            "range": "± 0.000056",
+            "range": "\u00b1 0.000056",
             "unit": "s",
             "extra": "min=0.003041 max=0.003517"
           },
           {
             "name": "c_loop",
             "value": 0.0003617244999999514,
-            "range": "± 0.000039",
+            "range": "\u00b1 0.000039",
             "unit": "s",
             "extra": "min=0.000338 max=0.000629"
           },
           {
             "name": "batched_3d",
-            "value": 0.00003217814000024077,
-            "range": "± 0.000008",
+            "value": 3.217814000024077e-05,
+            "range": "\u00b1 0.000008",
             "unit": "s",
             "extra": "min=0.000030 max=0.000102"
           },
           {
             "name": "batched_4d",
-            "value": 0.00003189212999942015,
-            "range": "± 0.000003",
+            "value": 3.189212999942015e-05,
+            "range": "\u00b1 0.000003",
             "unit": "s",
             "extra": "min=0.000031 max=0.000051"
           },
           {
             "name": "phase2_tomography",
             "value": 0.23241580240000131,
-            "range": "± 0.001663",
+            "range": "\u00b1 0.001663",
             "unit": "s",
             "extra": "n_sel=32"
           },
           {
             "name": "phase2_many_small",
             "value": 0.12336373079999988,
-            "range": "± 0.001051",
+            "range": "\u00b1 0.001051",
             "unit": "s",
             "extra": "outer=65536 n=8"
           }
@@ -488,42 +516,42 @@ window.BENCHMARK_DATA = {
           {
             "name": "python_loop",
             "value": 0.00370461780784321,
-            "range": "± 0.000039",
+            "range": "\u00b1 0.000039",
             "unit": "s",
             "extra": "min=0.003641 max=0.003874"
           },
           {
             "name": "c_loop",
             "value": 0.0006365233936168683,
-            "range": "± 0.000338",
+            "range": "\u00b1 0.000338",
             "unit": "s",
             "extra": "min=0.000586 max=0.011832"
           },
           {
             "name": "batched_3d",
-            "value": 0.000080287793157701,
-            "range": "± 0.000016",
+            "value": 8.0287793157701e-05,
+            "range": "\u00b1 0.000016",
             "unit": "s",
             "extra": "min=0.000075 max=0.000239"
           },
           {
             "name": "batched_4d",
-            "value": 0.00002061992995989886,
-            "range": "± 0.000006",
+            "value": 2.061992995989886e-05,
+            "range": "\u00b1 0.000006",
             "unit": "s",
             "extra": "min=0.000019 max=0.000129"
           },
           {
             "name": "phase2_tomography",
             "value": 0.22819884499999715,
-            "range": "± 0.001492",
+            "range": "\u00b1 0.001492",
             "unit": "s",
             "extra": "n_sel=32"
           },
           {
             "name": "phase2_many_small",
             "value": 0.09623029260000919,
-            "range": "± 0.000434",
+            "range": "\u00b1 0.000434",
             "unit": "s",
             "extra": "outer=65536 n=8"
           }
@@ -552,42 +580,42 @@ window.BENCHMARK_DATA = {
           {
             "name": "python_loop",
             "value": 0.0030772194699991927,
-            "range": "± 0.000078",
+            "range": "\u00b1 0.000078",
             "unit": "s",
             "extra": "min=0.003023 max=0.003585"
           },
           {
             "name": "c_loop",
             "value": 0.0003506058700003223,
-            "range": "± 0.000034",
+            "range": "\u00b1 0.000034",
             "unit": "s",
             "extra": "min=0.000328 max=0.000560"
           },
           {
             "name": "batched_3d",
-            "value": 0.000026618490000771544,
-            "range": "± 0.000008",
+            "value": 2.6618490000771544e-05,
+            "range": "\u00b1 0.000008",
             "unit": "s",
             "extra": "min=0.000025 max=0.000098"
           },
           {
             "name": "batched_4d",
-            "value": 0.000027284489997896345,
-            "range": "± 0.000004",
+            "value": 2.7284489997896345e-05,
+            "range": "\u00b1 0.000004",
             "unit": "s",
             "extra": "min=0.000026 max=0.000053"
           },
           {
             "name": "phase2_tomography",
             "value": 0.23692486819999772,
-            "range": "± 0.009584",
+            "range": "\u00b1 0.009584",
             "unit": "s",
             "extra": "n_sel=32"
           },
           {
             "name": "phase2_many_small",
             "value": 0.0960460659999967,
-            "range": "± 0.000181",
+            "range": "\u00b1 0.000181",
             "unit": "s",
             "extra": "outer=65536 n=8"
           }
@@ -618,42 +646,42 @@ window.BENCHMARK_DATA = {
           {
             "name": "python_loop",
             "value": 0.0030782233299996163,
-            "range": "± 0.000117",
+            "range": "\u00b1 0.000117",
             "unit": "s",
             "extra": "min=0.002988 max=0.003835"
           },
           {
             "name": "c_loop",
             "value": 0.0003323742000006291,
-            "range": "± 0.000033",
+            "range": "\u00b1 0.000033",
             "unit": "s",
             "extra": "min=0.000314 max=0.000566"
           },
           {
             "name": "batched_3d",
-            "value": 0.000026980169999148984,
-            "range": "± 0.000008",
+            "value": 2.6980169999148984e-05,
+            "range": "\u00b1 0.000008",
             "unit": "s",
             "extra": "min=0.000025 max=0.000097"
           },
           {
             "name": "batched_4d",
-            "value": 0.00002766626999687105,
-            "range": "± 0.000003",
+            "value": 2.766626999687105e-05,
+            "range": "\u00b1 0.000003",
             "unit": "s",
             "extra": "min=0.000026 max=0.000046"
           },
           {
             "name": "phase2_tomography",
             "value": 0.23442130359999852,
-            "range": "± 0.006919",
+            "range": "\u00b1 0.006919",
             "unit": "s",
             "extra": "n_sel=32"
           },
           {
             "name": "phase2_many_small",
             "value": 0.09601172719999909,
-            "range": "± 0.000102",
+            "range": "\u00b1 0.000102",
             "unit": "s",
             "extra": "outer=65536 n=8"
           }
@@ -684,270 +712,42 @@ window.BENCHMARK_DATA = {
           {
             "name": "python_loop",
             "value": 0.003095743400000117,
-            "range": "± 0.000115",
+            "range": "\u00b1 0.000115",
             "unit": "s",
             "extra": "min=0.003007 max=0.003828"
           },
           {
             "name": "c_loop",
             "value": 0.00033900803999998175,
-            "range": "± 0.000041",
+            "range": "\u00b1 0.000041",
             "unit": "s",
             "extra": "min=0.000310 max=0.000612"
           },
           {
             "name": "batched_3d",
-            "value": 0.000028564819999843393,
-            "range": "± 0.000008",
+            "value": 2.8564819999843393e-05,
+            "range": "\u00b1 0.000008",
             "unit": "s",
             "extra": "min=0.000026 max=0.000099"
           },
           {
             "name": "batched_4d",
-            "value": 0.00002958037999917451,
-            "range": "± 0.000005",
+            "value": 2.958037999917451e-05,
+            "range": "\u00b1 0.000005",
             "unit": "s",
             "extra": "min=0.000028 max=0.000067"
           },
           {
             "name": "phase2_tomography",
             "value": 0.23184933779999994,
-            "range": "± 0.005820",
+            "range": "\u00b1 0.005820",
             "unit": "s",
             "extra": "n_sel=32"
           },
           {
             "name": "phase2_many_small",
             "value": 0.09936541899999725,
-            "range": "± 0.000172",
-            "unit": "s",
-            "extra": "outer=65536 n=8"
-          }
-        ]
-      },
-      {
-        "commit": {
-          "author": {
-            "name": "jjgoings",
-            "username": "jjgoings",
-            "email": "jjgoings@gmail.com"
-          },
-          "committer": {
-            "name": "jjgoings",
-            "username": "jjgoings",
-            "email": "jjgoings@gmail.com"
-          },
-          "id": "a028f71f3aca3907d0a2421d4929f13f9596b43d",
-          "message": "work with complex128 in interleaved fashion",
-          "timestamp": "2024-11-23T00:23:03Z",
-          "url": "https://github.com/jjgoings/pfapack/commit/a028f71f3aca3907d0a2421d4929f13f9596b43d"
-        },
-        "date": 1769109984568,
-        "tool": "customSmallerIsBetter",
-        "benches": [
-          {
-            "name": "python_loop",
-            "value": 0.003079936769999847,
-            "range": "± 0.000078",
-            "unit": "s",
-            "extra": "min=0.002997 max=0.003522"
-          },
-          {
-            "name": "c_loop",
-            "value": 0.00027456968000024064,
-            "range": "± 0.00003",
-            "unit": "s",
-            "extra": "min=0.000258 max=0.000486"
-          },
-          {
-            "name": "batched_3d",
-            "value": 0.00006051457000182836,
-            "range": "± 0.000006",
-            "unit": "s",
-            "extra": "min=0.000058 max=0.000101"
-          },
-          {
-            "name": "batched_4d",
-            "value": 0.00006685340000046835,
-            "range": "± 0.000009",
-            "unit": "s",
-            "extra": "min=0.000063 max=0.000139"
-          },
-          {
-            "name": "phase2_many_small",
-            "value": 0.5343145090000064,
-            "range": "± 0.004478",
-            "unit": "s",
-            "extra": "outer=65536 n=8"
-          }
-        ]
-      },
-      {
-        "commit": {
-          "author": {
-            "name": "jjgoings",
-            "username": "jjgoings",
-            "email": "jjgoings@gmail.com"
-          },
-          "committer": {
-            "name": "jjgoings",
-            "username": "jjgoings",
-            "email": "jjgoings@gmail.com"
-          },
-          "id": "0761f01bb615a85b46895d14417e9dfdee838bc4",
-          "message": "everything is c-contig",
-          "timestamp": "2024-10-31T22:00:19Z",
-          "url": "https://github.com/jjgoings/pfapack/commit/0761f01bb615a85b46895d14417e9dfdee838bc4"
-        },
-        "date": 1769109987394,
-        "tool": "customSmallerIsBetter",
-        "benches": [
-          {
-            "name": "python_loop",
-            "value": 0.0030536386199997876,
-            "range": "± 0.000055",
-            "unit": "s",
-            "extra": "min=0.002996 max=0.003415"
-          },
-          {
-            "name": "c_loop",
-            "value": 0.0002768835699995975,
-            "range": "± 0.000033",
-            "unit": "s",
-            "extra": "min=0.000261 max=0.000510"
-          },
-          {
-            "name": "batched_3d",
-            "value": 0.00005877076000018633,
-            "range": "± 0.000006",
-            "unit": "s",
-            "extra": "min=0.000056 max=0.000105"
-          },
-          {
-            "name": "batched_4d",
-            "value": 0.00006568734000026665,
-            "range": "± 0.00001",
-            "unit": "s",
-            "extra": "min=0.000062 max=0.000149"
-          },
-          {
-            "name": "phase2_many_small",
-            "value": 0.5343886623999993,
-            "range": "± 0.00281",
-            "unit": "s",
-            "extra": "outer=65536 n=8"
-          }
-        ]
-      },
-      {
-        "commit": {
-          "author": {
-            "name": "jjgoings",
-            "username": "jjgoings",
-            "email": "jjgoings@gmail.com"
-          },
-          "committer": {
-            "name": "jjgoings",
-            "username": "jjgoings",
-            "email": "jjgoings@gmail.com"
-          },
-          "id": "7d310f121649f62c253bc07b9632cbd8492ec513",
-          "message": "single alloc",
-          "timestamp": "2024-11-26T19:40:52Z",
-          "url": "https://github.com/jjgoings/pfapack/commit/7d310f121649f62c253bc07b9632cbd8492ec513"
-        },
-        "date": 1769109989516,
-        "tool": "customSmallerIsBetter",
-        "benches": [
-          {
-            "name": "python_loop",
-            "value": 0.003112745819998395,
-            "range": "± 0.000081",
-            "unit": "s",
-            "extra": "min=0.003051 max=0.003704"
-          },
-          {
-            "name": "c_loop",
-            "value": 0.00033658400000120993,
-            "range": "± 0.000033",
-            "unit": "s",
-            "extra": "min=0.000318 max=0.000601"
-          },
-          {
-            "name": "batched_3d",
-            "value": 0.00003386707999993632,
-            "range": "± 0.000004",
-            "unit": "s",
-            "extra": "min=0.000033 max=0.000060"
-          },
-          {
-            "name": "batched_4d",
-            "value": 0.00006697248999898875,
-            "range": "± 0.00001",
-            "unit": "s",
-            "extra": "min=0.000062 max=0.000140"
-          },
-          {
-            "name": "phase2_many_small",
-            "value": 0.572861564599998,
-            "range": "± 0.009292",
-            "unit": "s",
-            "extra": "outer=65536 n=8"
-          }
-        ]
-      },
-      {
-        "commit": {
-          "author": {
-            "name": "jjgoings",
-            "username": "jjgoings",
-            "email": "jjgoings@gmail.com"
-          },
-          "committer": {
-            "name": "jjgoings",
-            "username": "jjgoings",
-            "email": "jjgoings@gmail.com"
-          },
-          "id": "61ae64e6ab7ac7490ddc3e54d9bbc50ee9ec04a7",
-          "message": "superbatching",
-          "timestamp": "2024-07-31T22:44:29Z",
-          "url": "https://github.com/jjgoings/pfapack/commit/61ae64e6ab7ac7490ddc3e54d9bbc50ee9ec04a7"
-        },
-        "date": 1769109989801,
-        "tool": "customSmallerIsBetter",
-        "benches": [
-          {
-            "name": "python_loop",
-            "value": 0.003088310039999982,
-            "range": "± 0.000048",
-            "unit": "s",
-            "extra": "min=0.003043 max=0.003435"
-          },
-          {
-            "name": "c_loop",
-            "value": 0.00030465313999940237,
-            "range": "± 0.000034",
-            "unit": "s",
-            "extra": "min=0.000282 max=0.000510"
-          },
-          {
-            "name": "batched_3d",
-            "value": 0.000060966549999648125,
-            "range": "± 0.000007",
-            "unit": "s",
-            "extra": "min=0.000058 max=0.000110"
-          },
-          {
-            "name": "batched_4d",
-            "value": 0.00006735028999955262,
-            "range": "± 0.000009",
-            "unit": "s",
-            "extra": "min=0.000063 max=0.000138"
-          },
-          {
-            "name": "phase2_many_small",
-            "value": 0.5643701415999999,
-            "range": "± 0.007458",
+            "range": "\u00b1 0.000172",
             "unit": "s",
             "extra": "outer=65536 n=8"
           }
