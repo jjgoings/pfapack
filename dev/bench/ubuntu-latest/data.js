@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1769107967592,
+  "lastUpdate": 1769107971951,
   "repoUrl": "https://github.com/jjgoings/pfapack",
   "entries": {
     "PFAPACK Performance (ubuntu-latest)": [
@@ -542,6 +542,56 @@ window.BENCHMARK_DATA = {
             "range": "± 0.000014",
             "unit": "s",
             "extra": "min=0.000064 max=0.000172"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "jjgoings@gmail.com"
+          },
+          "committer": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "jjgoings@gmail.com"
+          },
+          "id": "0761f01bb615a85b46895d14417e9dfdee838bc4",
+          "message": "everything is c-contig",
+          "timestamp": "2024-10-31T22:00:19Z",
+          "url": "https://github.com/jjgoings/pfapack/commit/0761f01bb615a85b46895d14417e9dfdee838bc4"
+        },
+        "date": 1769107971215,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "python_loop",
+            "value": 0.0030618643799985535,
+            "range": "± 0.00013",
+            "unit": "s",
+            "extra": "min=0.002994 max=0.003891"
+          },
+          {
+            "name": "c_loop",
+            "value": 0.0002752286600002662,
+            "range": "± 0.000032",
+            "unit": "s",
+            "extra": "min=0.000258 max=0.000497"
+          },
+          {
+            "name": "batched_3d",
+            "value": 0.00008460333000101628,
+            "range": "± 0.000017",
+            "unit": "s",
+            "extra": "min=0.000076 max=0.000156"
+          },
+          {
+            "name": "batched_4d",
+            "value": 0.0000892349099973444,
+            "range": "± 0.000013",
+            "unit": "s",
+            "extra": "min=0.000082 max=0.000159"
           }
         ]
       }
