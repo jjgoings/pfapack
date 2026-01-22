@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1769107990224,
+  "lastUpdate": 1769108017817,
   "repoUrl": "https://github.com/jjgoings/pfapack",
   "entries": {
     "PFAPACK Performance (macos-latest)": [
@@ -754,6 +754,70 @@ window.BENCHMARK_DATA = {
             "name": "phase2_many_small",
             "value": 0.12750932499999976,
             "range": "± 0.003901",
+            "unit": "s",
+            "extra": "outer=65536 n=8"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "3915169+jjgoings@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "3915169+jjgoings@users.noreply.github.com"
+          },
+          "id": "0825d76f7b87c61a84cb00f726782b317df8063b",
+          "message": "Optimize Parlett-Reid factorization: fused division, internal BLAS-1 kernels, batched row swaps",
+          "timestamp": "2026-01-22T05:43:03Z",
+          "url": "https://github.com/jjgoings/pfapack/commit/0825d76f7b87c61a84cb00f726782b317df8063b"
+        },
+        "date": 1769108016976,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "python_loop",
+            "value": 0.002324161650001031,
+            "range": "± 0.000935",
+            "unit": "s",
+            "extra": "min=0.001478 max=0.005090"
+          },
+          {
+            "name": "c_loop",
+            "value": 0.00020817415999800913,
+            "range": "± 0.00014",
+            "unit": "s",
+            "extra": "min=0.000132 max=0.001032"
+          },
+          {
+            "name": "batched_3d",
+            "value": 0.00001975955000034446,
+            "range": "± 0.000003",
+            "unit": "s",
+            "extra": "min=0.000018 max=0.000046"
+          },
+          {
+            "name": "batched_4d",
+            "value": 0.000027749620000463436,
+            "range": "± 0.000055",
+            "unit": "s",
+            "extra": "min=0.000019 max=0.000560"
+          },
+          {
+            "name": "phase2_tomography",
+            "value": 0.1074303835999956,
+            "range": "± 0.005622",
+            "unit": "s",
+            "extra": "n_sel=32"
+          },
+          {
+            "name": "phase2_many_small",
+            "value": 0.09370094999999878,
+            "range": "± 0.00416",
             "unit": "s",
             "extra": "outer=65536 n=8"
           }
