@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1769110881048,
+  "lastUpdate": 1769110941386,
   "repoUrl": "https://github.com/jjgoings/pfapack",
   "entries": {
     "PFAPACK Performance (macos-latest)": [
@@ -975,6 +975,63 @@ window.BENCHMARK_DATA = {
             "name": "phase2_many_small",
             "value": 0.1283822836000013,
             "range": "± 0.010354",
+            "unit": "s",
+            "extra": "outer=65536 n=8"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "jjgoings@gmail.com"
+          },
+          "committer": {
+            "name": "jjgoings",
+            "username": "jjgoings",
+            "email": "jjgoings@gmail.com"
+          },
+          "id": "a028f71f3aca3907d0a2421d4929f13f9596b43d",
+          "message": "work with complex128 in interleaved fashion",
+          "timestamp": "2024-11-23T00:23:03Z",
+          "url": "https://github.com/jjgoings/pfapack/commit/a028f71f3aca3907d0a2421d4929f13f9596b43d"
+        },
+        "date": 1769110940556,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "python_loop",
+            "value": 0.0015735201000001099,
+            "range": "± 0.000105",
+            "unit": "s",
+            "extra": "min=0.001464 max=0.002265"
+          },
+          {
+            "name": "c_loop",
+            "value": 0.00013992913999942404,
+            "range": "± 0.000085",
+            "unit": "s",
+            "extra": "min=0.000115 max=0.000919"
+          },
+          {
+            "name": "batched_3d",
+            "value": 0.0000433470600006558,
+            "range": "± 0.000024",
+            "unit": "s",
+            "extra": "min=0.000035 max=0.000158"
+          },
+          {
+            "name": "batched_4d",
+            "value": 0.00005115665999852581,
+            "range": "± 0.000056",
+            "unit": "s",
+            "extra": "min=0.000037 max=0.000545"
+          },
+          {
+            "name": "phase2_many_small",
+            "value": 0.8545662413999991,
+            "range": "± 0.030174",
             "unit": "s",
             "extra": "outer=65536 n=8"
           }
