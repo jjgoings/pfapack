@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>PFAPACK Performance Benchmarks</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-error-bars@3"></script>
+    <style>
+        :root {
+            --ubuntu-color: #3b82f6;
+            --ubuntu-color-light: rgba(59, 130, 246, 0.15);
+            --ubuntu-error: #1d4ed8;
+            --macos-color: #ef4444;
+            --macos-color-light: rgba(239, 68, 68, 0.15);
+            --macos-error: #b91c1c;
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-card: #1e293b;
+            --border-color: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--ubuntu-color), var(--macos-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            font-weight: 400;
+        }
+
+        .legend-bar {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1.5rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .legend-dot.ubuntu { background: var(--ubuntu-color); }
+        .legend-dot.macos { background: var(--macos-color); }
+
+        .charts-grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .chart-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            padding: 1.5rem;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .chart-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .chart-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .chart-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            background: var(--bg-primary);
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        footer a {
+            color: var(--ubuntu-color);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            color: var(--text-muted);
+        }
+
+        .loading::after {
+            content: '';
+            width: 24px;
+            height: 24px;
+            margin-left: 12px;
+            border: 2px solid var(--border-color);
+            border-top-color: var(--ubuntu-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .container { padding: 1rem; }
+            h1 { font-size: 1.75rem; }
+            .legend-bar { flex-direction: column; gap: 0.5rem; align-items: center; }
+            .chart-wrapper { height: 250px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>PFAPACK Performance Benchmarks</h1>
+            <p class="subtitle">Pfaffian computation timings across platforms with 95% confidence intervals</p>
+            <div class="legend-bar">
+                <div class="legend-item">
+                    <span class="legend-dot ubuntu"></span>
+                    <span>Ubuntu (Linux)</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot macos"></span>
+                    <span>macOS (Apple Silicon)</span>
+                </div>
+            </div>
+        </header>
+
+        <div id="charts" class="charts-grid">
+            <div class="loading">Loading benchmark data</div>
+        </div>
+
+        <footer>
+            <p>Data from <a href="https://github.com/jjgoings/pfapack">jjgoings/pfapack</a> CI benchmarks</p>
+        </footer>
+    </div>
+
+    <script>
+    const CONFIG = {
+        ubuntu: {
+            borderColor: 'rgb(59, 130, 246)',
+            backgroundColor: 'rgba(59, 130, 246, 0.15)',
+            errorBarColor: 'rgb(29, 78, 216)',
+            errorBarWhiskerColor: 'rgb(29, 78, 216)',
+        },
+        macos: {
+            borderColor: 'rgb(239, 68, 68)',
+            backgroundColor: 'rgba(239, 68, 68, 0.15)',
+            errorBarColor: 'rgb(185, 28, 28)',
+            errorBarWhiskerColor: 'rgb(185, 28, 28)',
+        }
+    };
+
+    const BENCHMARK_DESCRIPTIONS = {
+        'python_loop': 'Pure Python implementation',
+        'c_loop': 'C/Fortran via ctypes (individual calls)',
+        'batched_3d': 'Batched C/Fortran (3D array)',
+        'batched_4d': 'Batched C/Fortran (4D array)',
+        'phase2_tomography': 'Tomography workload',
+        'phase2_many_small': 'Many small matrices workload'
+    };
+
+    async function loadData(platform) {
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = `${platform}/data.js`;
+            script.onload = () => {
+                const data = window.BENCHMARK_DATA;
+                window.BENCHMARK_DATA = null;
+                resolve(data);
+            };
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+    }
+
+    function parseExtra(extra) {
+        const result = { min: null, max: null };
+        if (!extra) return result;
+        const minMatch = extra.match(/min=([\d.eE+-]+)/);
+        const maxMatch = extra.match(/max=([\d.eE+-]+)/);
+        if (minMatch) result.min = parseFloat(minMatch[1]);
+        if (maxMatch) result.max = parseFloat(maxMatch[1]);
+        return result;
+    }
+
+    function processData(ubuntuData, macosData) {
+        const ubuntuEntries = Object.values(ubuntuData.entries)[0] || [];
+        const macosEntries = Object.values(macosData.entries)[0] || [];
+
+        // Build commit order from ubuntu (primary)
+        const commitOrder = {};
+        ubuntuEntries.forEach((entry, idx) => {
+            commitOrder[entry.commit.id.slice(0, 7)] = idx;
+        });
+
+        // Also add any macos-only commits
+        macosEntries.forEach((entry, idx) => {
+            const short = entry.commit.id.slice(0, 7);
+            if (!(short in commitOrder)) {
+                commitOrder[short] = Object.keys(commitOrder).length;
+            }
+        });
+
+        const benchmarks = {};
+
+        function processEntries(entries, platform) {
+            entries.forEach(entry => {
+                const commit = entry.commit.id.slice(0, 7);
+                const message = entry.commit.message.split('\n')[0].slice(0, 50);
+                const timestamp = entry.commit.timestamp;
+
+                entry.benches.forEach(bench => {
+                    if (!benchmarks[bench.name]) {
+                        benchmarks[bench.name] = { ubuntu: {}, macos: {} };
+                    }
+
+                    let stddev = 0;
+                    if (bench.range) {
+                        const match = bench.range.match(/±?\s*([\d.eE+-]+)/);
+                        if (match) stddev = parseFloat(match[1]);
+                    }
+
+                    const ci95 = 1.96 * stddev;
+                    const extra = parseExtra(bench.extra);
+
+                    benchmarks[bench.name][platform][commit] = {
+                        commit,
+                        message,
+                        timestamp,
+                        value: bench.value,
+                        stddev,
+                        yMin: Math.max(0, bench.value - ci95),
+                        yMax: bench.value + ci95,
+                        min: extra.min,
+                        max: extra.max,
+                        order: commitOrder[commit]
+                    };
+                });
+            });
+        }
+
+        processEntries(ubuntuEntries, 'ubuntu');
+        processEntries(macosEntries, 'macos');
+
+        // Convert to sorted arrays
+        const result = {};
+        for (const [name, platforms] of Object.entries(benchmarks)) {
+            result[name] = {
+                ubuntu: Object.values(platforms.ubuntu).sort((a, b) => a.order - b.order),
+                macos: Object.values(platforms.macos).sort((a, b) => a.order - b.order)
+            };
+        }
+
+        return result;
+    }
+
+    function formatTime(seconds) {
+        const ms = seconds * 1000;
+        if (ms >= 1) {
+            return `${ms.toFixed(2)} ms`;
+        } else if (ms >= 0.001) {
+            return `${(ms * 1000).toFixed(1)} µs`;
+        } else {
+            return `${(ms * 1000000).toFixed(1)} ns`;
+        }
+    }
+
+    function createChart(container, name, data) {
+        const card = document.createElement('div');
+        card.className = 'chart-card';
+
+        const header = document.createElement('div');
+        header.className = 'chart-header';
+
+        const title = document.createElement('span');
+        title.className = 'chart-title';
+        title.textContent = name;
+
+        const badge = document.createElement('span');
+        badge.className = 'chart-badge';
+        badge.textContent = BENCHMARK_DESCRIPTIONS[name] || 'Benchmark';
+
+        header.appendChild(title);
+        header.appendChild(badge);
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'chart-wrapper';
+
+        const canvas = document.createElement('canvas');
+        wrapper.appendChild(canvas);
+
+        card.appendChild(header);
+        card.appendChild(wrapper);
+        container.appendChild(card);
+
+        // Merge commit labels from both platforms
+        const allCommits = new Map();
+        data.ubuntu.forEach(d => allCommits.set(d.commit, d));
+        data.macos.forEach(d => { if (!allCommits.has(d.commit)) allCommits.set(d.commit, d); });
+        const sortedCommits = Array.from(allCommits.values()).sort((a, b) => a.order - b.order);
+        const labels = sortedCommits.map(d => d.commit);
+
+        // Create lookup maps
+        const ubuntuMap = new Map(data.ubuntu.map(d => [d.commit, d]));
+        const macosMap = new Map(data.macos.map(d => [d.commit, d]));
+
+        const datasets = [];
+
+        if (data.ubuntu.length > 0) {
+            datasets.push({
+                label: 'Ubuntu',
+                data: labels.map(commit => {
+                    const d = ubuntuMap.get(commit);
+                    return d ? { y: d.value, yMin: d.yMin, yMax: d.yMax } : null;
+                }),
+                borderColor: CONFIG.ubuntu.borderColor,
+                backgroundColor: CONFIG.ubuntu.backgroundColor,
+                errorBarColor: CONFIG.ubuntu.errorBarColor,
+                errorBarWhiskerColor: CONFIG.ubuntu.errorBarWhiskerColor,
+                errorBarWhiskerSize: 6,
+                pointRadius: 5,
+                pointHoverRadius: 8,
+                borderWidth: 2,
+                tension: 0.1,
+                spanGaps: true,
+            });
+        }
+
+        if (data.macos.length > 0) {
+            datasets.push({
+                label: 'macOS',
+                data: labels.map(commit => {
+                    const d = macosMap.get(commit);
+                    return d ? { y: d.value, yMin: d.yMin, yMax: d.yMax } : null;
+                }),
+                borderColor: CONFIG.macos.borderColor,
+                backgroundColor: CONFIG.macos.backgroundColor,
+                errorBarColor: CONFIG.macos.errorBarColor,
+                errorBarWhiskerColor: CONFIG.macos.errorBarWhiskerColor,
+                errorBarWhiskerSize: 6,
+                pointRadius: 5,
+                pointHoverRadius: 8,
+                borderWidth: 2,
+                tension: 0.1,
+                spanGaps: true,
+            });
+        }
+
+        new Chart(canvas, {
+            type: 'lineWithErrorBars',
+            data: { labels, datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                        titleColor: '#f1f5f9',
+                        bodyColor: '#94a3b8',
+                        borderColor: '#334155',
+                        borderWidth: 1,
+                        titleFont: { family: 'JetBrains Mono', size: 12, weight: '600' },
+                        bodyFont: { family: 'Inter', size: 12 },
+                        padding: 12,
+                        cornerRadius: 8,
+                        displayColors: true,
+                        callbacks: {
+                            title: (ctx) => {
+                                const commit = labels[ctx[0].dataIndex];
+                                const info = ubuntuMap.get(commit) || macosMap.get(commit);
+                                return info ? `${commit}: ${info.message}` : commit;
+                            },
+                            label: (ctx) => {
+                                const commit = labels[ctx.dataIndex];
+                                const platform = ctx.dataset.label.toLowerCase();
+                                const map = platform === 'ubuntu' ? ubuntuMap : macosMap;
+                                const d = map.get(commit);
+                                if (!d) return null;
+
+                                const lines = [
+                                    `${ctx.dataset.label}: ${formatTime(d.value)} ± ${formatTime(d.yMax - d.value)} (95% CI)`
+                                ];
+                                if (d.min !== null && d.max !== null) {
+                                    lines.push(`  Range: ${formatTime(d.min)} – ${formatTime(d.max)}`);
+                                }
+                                return lines;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            color: 'rgba(51, 65, 85, 0.5)',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: '#64748b',
+                            font: { family: 'JetBrains Mono', size: 10 },
+                            maxRotation: 45
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: 'rgba(51, 65, 85, 0.5)',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: '#64748b',
+                            font: { family: 'Inter', size: 11 },
+                            callback: (value) => formatTime(value)
+                        },
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+    async function main() {
+        const container = document.getElementById('charts');
+
+        try {
+            const [ubuntuData, macosData] = await Promise.all([
+                loadData('ubuntu-latest'),
+                loadData('macos-latest')
+            ]);
+
+            const benchmarks = processData(ubuntuData, macosData);
+
+            container.innerHTML = '';
+
+            // Order benchmarks logically
+            const benchOrder = ['python_loop', 'c_loop', 'batched_3d', 'batched_4d', 'phase2_tomography', 'phase2_many_small'];
+            const sortedNames = Object.keys(benchmarks).sort((a, b) => {
+                const ai = benchOrder.indexOf(a);
+                const bi = benchOrder.indexOf(b);
+                if (ai === -1 && bi === -1) return a.localeCompare(b);
+                if (ai === -1) return 1;
+                if (bi === -1) return -1;
+                return ai - bi;
+            });
+
+            for (const name of sortedNames) {
+                createChart(container, name, benchmarks[name]);
+            }
+
+        } catch (e) {
+            container.innerHTML = `<div class="chart-card"><p style="color: var(--macos-color); padding: 2rem;">Error loading benchmark data: ${e.message}</p></div>`;
+            console.error(e);
+        }
+    }
+
+    main();
+    </script>
+</body>
+</html>
