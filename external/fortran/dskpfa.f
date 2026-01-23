@@ -93,6 +93,7 @@
       PARAMETER          ( ZERO = 0.0D+0 )
 
       INTEGER            I
+      DOUBLE PRECISION   LOG_PFAFF, PIVOT, SIGN_PFAFF
 
 *     .. Local Scalars ..
       LOGICAL            LQUERY, UPPER, LTL
@@ -102,6 +103,7 @@
 *     .. External Functions ..
       LOGICAL            LSAME
       EXTERNAL           LSAME
+      INTRINSIC          DABS, DLOG, DEXP, DSIGN
 
       INFO = 0
       UPPER = LSAME( UPLO, 'U' )
@@ -163,26 +165,59 @@
          IF( INFO .GT. 0 ) THEN
             PFAFF = ZERO
             INFO = 0
-         ELSE
-            PFAFF = ONE
+         ELSE IF( N .GT. 128 ) THEN
+*     For large matrices (N > 128), use log-space accumulation to prevent
+*     overflow/underflow. Accumulate log|Pf| and sign separately.
+            LOG_PFAFF = ZERO
+            SIGN_PFAFF = ONE
 
             IF( UPPER ) THEN
 
                DO 10 I = 1, N-1, 2
-                  PFAFF = PFAFF * A( I, I+1 )
+                  PIVOT = A( I, I+1 )
+                  LOG_PFAFF = LOG_PFAFF + DLOG( DABS(PIVOT) )
+                  IF( PIVOT .LT. ZERO ) SIGN_PFAFF = -SIGN_PFAFF
 
 *     Accumulate the determinant of the permutations
-                  IF( IWORK( I ) .NE. I ) PFAFF = -PFAFF
+                  IF( IWORK( I ) .NE. I ) SIGN_PFAFF = -SIGN_PFAFF
  10            CONTINUE
 
             ELSE
 
                DO 20 I = 1, N-1, 2
+                  PIVOT = -A( I+1, I )
+                  LOG_PFAFF = LOG_PFAFF + DLOG( DABS(PIVOT) )
+                  IF( PIVOT .LT. ZERO ) SIGN_PFAFF = -SIGN_PFAFF
+
+*     Accumulate the determinant of the permutations
+                  IF( IWORK( I+1 ) .NE. I+1 ) SIGN_PFAFF = -SIGN_PFAFF
+ 20            CONTINUE
+
+            END IF
+
+*     Reconstruct Pfaffian from log-space: Pf = sign * exp(log|Pf|)
+            PFAFF = SIGN_PFAFF * DEXP( LOG_PFAFF )
+         ELSE
+*     For small matrices, use direct multiplication (faster, no overflow risk)
+            PFAFF = ONE
+
+            IF( UPPER ) THEN
+
+               DO 11 I = 1, N-1, 2
+                  PFAFF = PFAFF * A( I, I+1 )
+
+*     Accumulate the determinant of the permutations
+                  IF( IWORK( I ) .NE. I ) PFAFF = -PFAFF
+ 11            CONTINUE
+
+            ELSE
+
+               DO 21 I = 1, N-1, 2
                   PFAFF = PFAFF * (-A( I+1, I ))
 
 *     Accumulate the determinant of the permutations
                   IF( IWORK( I+1 ) .NE. I+1 ) PFAFF = -PFAFF
- 20            CONTINUE
+ 21            CONTINUE
 
             END IF
          END IF
