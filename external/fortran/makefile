@@ -1,5 +1,19 @@
 FORT = gfortran
-FFLAGS = -O3 -march=native -ffast-math -funroll-loops -fimplicit-none
+# Use PFAPACK_MARCH env var for CPU target
+# Default: x86-64 on Intel/AMD for CI portability, native on ARM
+UNAME_M := $(shell uname -m)
+ifeq ($(UNAME_M),x86_64)
+  DEFAULT_MARCH = x86-64
+  MTUNE = -mtune=generic
+else ifeq ($(UNAME_M),amd64)
+  DEFAULT_MARCH = x86-64
+  MTUNE = -mtune=generic
+else
+  DEFAULT_MARCH = native
+  MTUNE =
+endif
+MARCH ?= $(or $(PFAPACK_MARCH),$(DEFAULT_MARCH))
+FFLAGS = -O3 -march=$(MARCH) $(MTUNE) -ffast-math -funroll-loops -fimplicit-none
 LDFLAGS = -flto
 
 OBJECTS= slasktrd.o slasktrf.o sskbpf10.o sskbpfa.o sskbtrd.o \
