@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1770274189795,
+  "lastUpdate": 1770679543424,
   "repoUrl": "https://github.com/jjgoings/pfapack",
   "entries": {
     "PFAPACK Performance (ubuntu-latest)": [
@@ -1263,6 +1263,72 @@ window.BENCHMARK_DATA = {
             "name": "phase2_many_small",
             "value": 0.10684701140000925,
             "range": "± 0.000665",
+            "unit": "s",
+            "extra": "outer=65536 n=8"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "3915169+jjgoings@users.noreply.github.com",
+            "name": "jjgoings",
+            "username": "jjgoings"
+          },
+          "committer": {
+            "email": "3915169+jjgoings@users.noreply.github.com",
+            "name": "jjgoings",
+            "username": "jjgoings"
+          },
+          "distinct": true,
+          "id": "6811e70b5d745fe08f16f0be9a48e85ad63d76cf",
+          "message": "Remove unused setuptools_scm build dependency (fixes pkg_resources ImportError on modern Python).",
+          "timestamp": "2026-02-09T15:23:20-08:00",
+          "tree_id": "6f25ff9304d88b1fa05a0dbea8d1dc7efd4c62fd",
+          "url": "https://github.com/jjgoings/pfapack/commit/6811e70b5d745fe08f16f0be9a48e85ad63d76cf"
+        },
+        "date": 1770679543186,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "python_loop",
+            "value": 0.003143110409998542,
+            "range": "± 0.000063",
+            "unit": "s",
+            "extra": "min=0.003067 max=0.003590"
+          },
+          {
+            "name": "c_loop",
+            "value": 0.0003410270099993795,
+            "range": "± 0.000037",
+            "unit": "s",
+            "extra": "min=0.000320 max=0.000586"
+          },
+          {
+            "name": "batched_3d",
+            "value": 0.000032165170000553187,
+            "range": "± 0.000008",
+            "unit": "s",
+            "extra": "min=0.000030 max=0.000103"
+          },
+          {
+            "name": "batched_4d",
+            "value": 0.000033031259999916077,
+            "range": "± 0.000003",
+            "unit": "s",
+            "extra": "min=0.000032 max=0.000048"
+          },
+          {
+            "name": "phase2_tomography",
+            "value": 0.24133425979999856,
+            "range": "± 0.013507",
+            "unit": "s",
+            "extra": "n_sel=32"
+          },
+          {
+            "name": "phase2_many_small",
+            "value": 0.1056011088000048,
+            "range": "± 0.000166",
             "unit": "s",
             "extra": "outer=65536 n=8"
           }
