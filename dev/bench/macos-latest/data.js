@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1770679573982,
+  "lastUpdate": 1773867753863,
   "repoUrl": "https://github.com/jjgoings/pfapack",
   "entries": {
     "PFAPACK Performance (macos-latest)": [
@@ -1329,6 +1329,72 @@ window.BENCHMARK_DATA = {
             "name": "phase2_many_small",
             "value": 0.15287204960000053,
             "range": "± 0.080298",
+            "unit": "s",
+            "extra": "outer=65536 n=8"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "3915169+jjgoings@users.noreply.github.com",
+            "name": "Joshua Goings",
+            "username": "jjgoings"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b161410359010b7e37b8ea85bd03ba8d149a3ebc",
+          "message": "Merge pull request #10 from jjgoings/test-hardening\n\nAdd layout resilience correctness tests",
+          "timestamp": "2026-03-18T14:00:39-07:00",
+          "tree_id": "ebce172ee82d316b632d9279b32108b3b444d434",
+          "url": "https://github.com/jjgoings/pfapack/commit/b161410359010b7e37b8ea85bd03ba8d149a3ebc"
+        },
+        "date": 1773867753082,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "python_loop",
+            "value": 0.0015737762299960422,
+            "range": "± 0.000191",
+            "unit": "s",
+            "extra": "min=0.001456 max=0.003111"
+          },
+          {
+            "name": "c_loop",
+            "value": 0.00015231576999838125,
+            "range": "± 0.000099",
+            "unit": "s",
+            "extra": "min=0.000129 max=0.000968"
+          },
+          {
+            "name": "batched_3d",
+            "value": 0.00001952119999373281,
+            "range": "± 0.000003",
+            "unit": "s",
+            "extra": "min=0.000018 max=0.000037"
+          },
+          {
+            "name": "batched_4d",
+            "value": 0.00002021787999467506,
+            "range": "± 0.000005",
+            "unit": "s",
+            "extra": "min=0.000019 max=0.000068"
+          },
+          {
+            "name": "phase2_tomography",
+            "value": 0.10787028339999552,
+            "range": "± 0.012494",
+            "unit": "s",
+            "extra": "n_sel=32"
+          },
+          {
+            "name": "phase2_many_small",
+            "value": 0.09239280819998612,
+            "range": "± 0.002984",
             "unit": "s",
             "extra": "outer=65536 n=8"
           }
