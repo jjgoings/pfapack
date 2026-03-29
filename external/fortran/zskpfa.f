@@ -96,11 +96,13 @@
       PARAMETER          ( ONE = (1.0D+0, 0.0D+0) )
       PARAMETER          ( ZERO = (0.0D+0, 0.0D+0) )
 
-      DOUBLE PRECISION   RONE
+      DOUBLE PRECISION   RONE, RZERO
       PARAMETER          ( RONE = 1.0D+0 )
+      PARAMETER          ( RZERO = 0.0D+0 )
 
       INTEGER            I,K
-      DOUBLE PRECISION   TEMP
+      DOUBLE PRECISION   TEMP, LOG_PFAFF, PIVOT_ABS, PHASE
+      DOUBLE COMPLEX     PIVOT
 
 *     .. Local Scalars ..
       LOGICAL            LQUERY, UPPER, LTL
@@ -110,7 +112,9 @@
 *     .. External Functions ..
       LOGICAL            LSAME
       EXTERNAL           LSAME
-      INTRINSIC          CONJG
+      DOUBLE PRECISION   DLAPY2
+      EXTERNAL           DLAPY2
+      INTRINSIC          CONJG, DBLE, DIMAG, DATAN2, DLOG, DEXP, DABS
 
       INFO = 0
       UPPER = LSAME( UPLO, 'U' )
@@ -172,26 +176,64 @@
          IF( INFO .GT. 0 ) THEN
             PFAFF = ZERO
             INFO = 0
-         ELSE
-            PFAFF = ONE
+         ELSE IF( N .GT. 128 ) THEN
+*     For large matrices (N > 128), use log-space accumulation to prevent
+*     overflow/underflow. Accumulate log|Pf| and phase separately.
+            LOG_PFAFF = RZERO
+            PHASE = RZERO
 
             IF( UPPER ) THEN
 
                DO 10 I = 1, N-1, 2
-                  PFAFF = PFAFF * A( I, I+1 )
+                  PIVOT = A( I, I+1 )
+                  PIVOT_ABS = DLAPY2( DBLE(PIVOT), DIMAG(PIVOT) )
+                  LOG_PFAFF = LOG_PFAFF + DLOG( PIVOT_ABS )
+                  PHASE = PHASE + DATAN2( DIMAG(PIVOT), DBLE(PIVOT) )
 
-*     Accumulate the determinant of the permutations
-                  IF( IWORK( I ) .NE. I ) PFAFF = -PFAFF
+*     Accumulate the determinant of the permutations (adds pi to phase)
+                  IF( IWORK( I ) .NE. I ) PHASE = PHASE +
+     $               3.141592653589793D0
  10            CONTINUE
 
             ELSE
 
                DO 20 I = 1, N-1, 2
+                  PIVOT = -A( I+1, I )
+                  PIVOT_ABS = DLAPY2( DBLE(PIVOT), DIMAG(PIVOT) )
+                  LOG_PFAFF = LOG_PFAFF + DLOG( PIVOT_ABS )
+                  PHASE = PHASE + DATAN2( DIMAG(PIVOT), DBLE(PIVOT) )
+
+*     Accumulate the determinant of the permutations (adds pi to phase)
+                  IF( IWORK( I+1 ) .NE. I+1 ) PHASE = PHASE +
+     $               3.141592653589793D0
+ 20            CONTINUE
+
+            END IF
+
+*     Reconstruct Pfaffian from log-space: Pf = exp(log|Pf|) * exp(i*phase)
+            PFAFF = DCMPLX( DEXP(LOG_PFAFF) * DCOS(PHASE),
+     $                      DEXP(LOG_PFAFF) * DSIN(PHASE) )
+         ELSE
+*     For small matrices, use direct multiplication (faster, no overflow risk)
+            PFAFF = ONE
+
+            IF( UPPER ) THEN
+
+               DO 11 I = 1, N-1, 2
+                  PFAFF = PFAFF * A( I, I+1 )
+
+*     Accumulate the determinant of the permutations
+                  IF( IWORK( I ) .NE. I ) PFAFF = -PFAFF
+ 11            CONTINUE
+
+            ELSE
+
+               DO 21 I = 1, N-1, 2
                   PFAFF = PFAFF * (-A( I+1, I ))
 
 *     Accumulate the determinant of the permutations
                   IF( IWORK( I+1 ) .NE. I+1 ) PFAFF = -PFAFF
- 20            CONTINUE
+ 21            CONTINUE
 
             END IF
          END IF

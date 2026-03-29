@@ -318,6 +318,97 @@ def pfaffian_LTL(A, overwrite_a=False):
     return pfaffian_val
 
 
+def pfaffian_LTL_log(A, overwrite_a=False):
+    """Compute log|Pf(A)| and sign(Pf(A)) using Parlett-Reid algorithm.
+
+    Returns (log_pfaffian, sign) where:
+    - log_pfaffian: natural log of |Pf(A)|, or -inf if Pf(A) = 0
+    - sign: +1, -1, or 0 for real matrices; phase (radians) for complex
+
+    For real matrices: Pf(A) = sign * exp(log_pfaffian)
+    For complex matrices: Pf(A) = exp(log_pfaffian + 1j*phase)
+
+    This avoids overflow/underflow for matrices with very large or small Pfaffians.
+    """
+    assert A.shape[0] == A.shape[1] > 0
+    assert np.allclose(A + A.T, 0, atol=1e-10)
+
+    n, m = A.shape
+    is_complex = np.iscomplexobj(A)
+
+    dtype = type(A[0, 0])
+    if dtype != np.complex128 and not is_complex:
+        A = np.asarray(A, dtype=float)
+
+    # Quick return for odd-sized matrices (Pfaffian is 0)
+    if n % 2 == 1:
+        return (-np.inf, 0.0)
+
+    if not overwrite_a:
+        A = A.copy()
+
+    log_pfaffian = 0.0
+    if is_complex:
+        phase = 0.0  # Accumulate phase for complex
+    else:
+        sign = 1.0  # Track sign for real
+
+    for k in range(0, n - 1, 2):
+        # Find the largest entry in A[k+1:,k] and permute it to A[k+1,k]
+        kp = k + 1 + np.abs(A[k + 1 :, k]).argmax()
+
+        # Check if we need to pivot
+        if kp != k + 1:
+            # interchange rows k+1 and kp
+            temp = A[k + 1, k:].copy()
+            A[k + 1, k:] = A[kp, k:]
+            A[kp, k:] = temp
+
+            # Then interchange columns k+1 and kp
+            temp = A[k:, k + 1].copy()
+            A[k:, k + 1] = A[k:, kp]
+            A[k:, kp] = temp
+
+            # every interchange corresponds to a "-" in det(P)
+            if is_complex:
+                phase += np.pi
+            else:
+                sign *= -1
+
+        # Now form the Gauss vector
+        pivot = A[k, k + 1]
+        if pivot != 0.0:
+            tau = A[k, k + 2 :].copy()
+            tau = tau / pivot
+
+            # Accumulate log|pivot| and sign/phase
+            log_pfaffian += np.log(np.abs(pivot))
+            if is_complex:
+                phase += np.angle(pivot)
+            else:
+                if pivot < 0:
+                    sign *= -1
+
+            if k + 2 < n:
+                # Update the matrix block A(k+2:,k+2)
+                A[k + 2 :, k + 2 :] = A[k + 2 :, k + 2 :] + np.outer(
+                    tau, A[k + 2 :, k + 1]
+                )
+                A[k + 2 :, k + 2 :] = A[k + 2 :, k + 2 :] - np.outer(
+                    A[k + 2 :, k + 1], tau
+                )
+        else:
+            # if we encounter a zero on the super/subdiagonal, the Pfaffian is 0
+            return (-np.inf, 0.0)
+
+    if is_complex:
+        # Normalize phase to (-pi, pi]
+        phase = (phase + np.pi) % (2 * np.pi) - np.pi
+        return (log_pfaffian, phase)
+    else:
+        return (log_pfaffian, sign)
+
+
 def pfaffian_householder(A, overwrite_a=False):
     """pfaffian(A, overwrite_a=False)
 
